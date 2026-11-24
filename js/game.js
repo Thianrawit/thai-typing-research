@@ -548,47 +548,43 @@ function renderWordZone() {
   const clusters = state.currentClusters;
   const cursor = state.charIndex;
 
-  // Each Thai grapheme cluster stays in ONE single contiguous <span> text node
-  // so OpenType ccmp/mark/mkmk positions stacked vowels & tone marks natively
-  let activeCluster = null;
-  const wordHtml = clusters
-    .map((cluster) => {
-      let cls = 'thai-cluster thai-cluster-pending';
-      if (cursor > cluster.endIdx) {
-        cls = 'thai-cluster thai-cluster-typed';
-      } else if (cursor >= cluster.startIdx && cursor <= cluster.endIdx) {
-        activeCluster = cluster;
-        cls = state.hasErrorOnChar
-          ? 'thai-cluster thai-cluster-error'
-          : 'thai-cluster thai-cluster-active';
-      }
-      return `<span class="${cls}">${escapeHtml(cluster.text)}</span>`;
-    })
-    .join('');
+  // Strictly ONE flat <span class="thai-cluster"> with unbroken textContent per grapheme cluster
+  // NEVER nest inner character spans or split colors inside a cluster (preserves HarfBuzz mkmk)
+  const frag = document.createDocumentFragment();
+  for (const cluster of clusters) {
+    const span = document.createElement('span');
+    span.textContent = cluster.text;
 
-  els.currentWordDisplay.innerHTML = wordHtml;
+    if (cursor > cluster.endIdx) {
+      span.className = 'thai-cluster thai-cluster-done';
+    } else if (cursor >= cluster.startIdx && cursor <= cluster.endIdx) {
+      span.className = state.hasErrorOnChar
+        ? 'thai-cluster thai-cluster-active thai-cluster-error animate-word-shake'
+        : 'thai-cluster thai-cluster-active';
+    } else {
+      span.className = 'thai-cluster thai-cluster-pending';
+    }
 
-  // Combining-Mark Sequence Bar: shown ONLY when active cluster contains > 1 char
-  if (activeCluster && activeCluster.chars.length > 1) {
-    const pills = activeCluster.chars.map((ch, offset) => {
-      const charIdx = activeCluster.startIdx + offset;
+    frag.appendChild(span);
+  }
+  els.currentWordDisplay.replaceChildren(frag);
+
+  // Character-by-character pill bar below focus word showing exact sub-character progress
+  const pillsHtml = state.currentChars
+    .map((ch, idx) => {
       const label = COMBINING_MARKS.has(ch) ? `◌${ch}` : ch;
       let cls = 'bg-slate-100 text-slate-500 border-slate-200';
-      if (charIdx < cursor) {
+      if (idx < cursor) {
         cls = 'bg-emerald-50 text-emerald-700 border-emerald-300 font-bold';
-      } else if (charIdx === cursor) {
+      } else if (idx === cursor) {
         cls = state.hasErrorOnChar
-          ? 'bg-rose-100 text-rose-700 border-rose-400 font-extrabold scale-105 shadow-xs'
+          ? 'bg-rose-600 text-white border-rose-700 font-extrabold scale-105 shadow-xs'
           : 'bg-blue-600 text-white border-blue-700 font-extrabold scale-105 shadow-xs';
       }
-      return `<span class="inline-flex items-center justify-center min-w-[28px] h-7 px-2 rounded-lg border text-sm leading-none transition-transform ${cls}">${escapeHtml(label)}</span>`;
-    });
-
-    const sep = icon('chevronRight', 'w-3.5 h-3.5 text-slate-300');
-    els.charStepStrip.innerHTML = `<span class="text-[11px] font-bold text-slate-400 mr-1">ลำดับกด:</span>${pills.join(sep)}`;
-  } else {
-    els.charStepStrip.innerHTML = '';
-  }
+      return `<span class="inline-flex items-center justify-center min-w-[26px] h-7 px-1.5 rounded-lg border text-xs leading-none transition-transform ${cls}">${escapeHtml(label)}</span>`;
+    })
+    .join('');
+  els.charStepStrip.innerHTML = pillsHtml;
 
   // Next 2 preview words
   const next1 = state.words[(state.wordIndex + 1) % state.words.length] || '';

@@ -6,7 +6,7 @@
   <title>ฝึกพิมพ์ดีดไทย ป.6 — Thai Typing Research</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@500;600;700&family=Sarabun:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -218,10 +218,10 @@
       <!-- Word Focus Zone -->
       <div class="flex-1 min-h-0 flex flex-col items-center justify-center">
         <div id="word-card" class="w-full max-w-3xl bg-white rounded-3xl border-2 border-slate-200 shadow-sm px-6 py-4 text-center transition-colors">
-          <div id="current-word-display" class="thai-word-display py-4 text-5xl md:text-6xl font-bold select-none flex items-center justify-center flex-wrap"></div>
+          <div id="current-word-display" class="thai-word-display py-4 text-5xl md:text-6xl select-none text-center"></div>
 
-          <!-- Combining-Mark Sequence Bar (shown only when active grapheme cluster has >1 char; fixed min-height prevents layout jump) -->
-          <div id="char-step-strip" class="mt-0.5 flex items-center justify-center gap-1.5 flex-wrap min-h-[30px]"></div>
+          <!-- Character-by-character sub-progress pill bar -->
+          <div id="char-step-strip" class="mt-0.5 flex items-center justify-center gap-1 flex-wrap min-h-[30px]"></div>
 
           <!-- Next 2 preview words -->
           <div id="next-words-preview" class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-center gap-5 text-lg md:text-xl font-semibold text-slate-400 select-none"></div>

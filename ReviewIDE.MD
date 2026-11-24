@@ -20,7 +20,15 @@
 
 ---
 
-## 2. Targeted Fixes Applied (Revision 2)
+## 2. Targeted Fixes Applied (Revision 3 — Thai Combining-Mark Hardening)
+
+- **Hardened Single-Text-Node Grapheme Rendering & `Noto Sans Thai` OpenType Shaping (`index.html`, `css/style.css`, `js/game.js`):**
+  - Loaded `Noto Sans Thai` (`wght@500;600;700`) via Google Fonts in `index.html` and removed `font-bold` / `flex` blockification / any `tracking-*` utility class from `#current-word-display`.
+  - Applied strict OpenType shaping CSS to `.thai-word-display, .thai-cluster`: `font-family: 'Noto Sans Thai', 'Sarabun', sans-serif; font-weight: 600; letter-spacing: 0 !important; word-spacing: 0 !important; line-height: 2 !important; font-kerning: normal; text-rendering: optimizeLegibility; font-feature-settings: "ccmp" 1, "mark" 1, "mkmk" 1;`.
+  - Updated `renderWordZone()` in `js/game.js` to construct each Thai grapheme cluster via `document.createElement('span')` + `span.textContent = cluster.text` (`replaceChildren(frag)`), guaranteeing strictly ONE unbroken text node and ONE uniform color per cluster (`done`: `#059669`, `active`: `#2563eb` + `#dbeafe` + `.animate-word-shake` on error, `pending`: `#0f172a`) so Chromium HarfBuzz `mkmk` positioning never drops stacked tone marks onto vowels.
+  - Kept the full character-by-character pill bar (`#char-step-strip`) directly below the focus word (`[ส] [◌ิ] [◌่] ...`) to show exact sub-character keystroke progress.
+
+## 3. Previous Targeted Fixes (Revision 2)
 
 1. **Fix 1 — Native Thai Vowel & Tone Mark Stacking + Word Normalization (`css/style.css`, `js/game.js`, `index.html`, `js/words.js`):**
    - Replaced per-character splitting in `#current-word-display` with Thai Grapheme Cluster grouping via `Intl.Segmenter('th', { granularity: 'grapheme' })` (+ regex fallback and `ำ` U+0E33 merging so `น้ำ`, `สิ่`, `ล้`, `ขึ้` each live inside ONE contiguous `<span>` text node).

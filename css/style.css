@@ -25,42 +25,46 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Native OpenType Thai mark/mkmk positioning: zero overlapping, sinking, or clipping */
-.thai-word-display {
-  font-family: var(--font-thai);
+/* Hardened Thai OpenType Shaping (Noto Sans Thai + ccmp/mark/mkmk) */
+.thai-word-display,
+.thai-cluster {
+  font-family: 'Noto Sans Thai', 'Sarabun', sans-serif;
+  font-weight: 600;
   letter-spacing: 0 !important;
-  font-feature-settings: "ccmp" 1, "mark" 1, "mkmk" 1;
-  line-height: 1.9 !important;
-  font-variant-ligatures: normal;
+  word-spacing: 0 !important;
+  line-height: 2 !important;
+  font-kerning: normal;
   text-rendering: optimizeLegibility;
+  font-feature-settings: "ccmp" 1, "mark" 1, "mkmk" 1;
 }
 
-/* Each Thai grapheme cluster stays inside ONE contiguous span text node */
+/* Each Thai grapheme cluster stays inside ONE flat span text node */
 .thai-cluster {
-  display: inline;
-  padding: 0.08em 0.04em;
-  border-radius: 8px;
+  display: inline-block;
+  vertical-align: baseline;
+  padding: 0 0.04em;
+  border-radius: 10px;
   transition: color 75ms ease-out, background-color 75ms ease-out, box-shadow 75ms ease-out;
 }
 
-.thai-cluster-typed {
+.thai-cluster-done {
   color: #059669;
 }
 
 .thai-cluster-active {
-  color: #1d4ed8;
-  background-color: rgba(219, 234, 254, 0.85);
+  color: #2563eb;
+  background-color: #dbeafe;
   box-shadow: inset 0 -4px 0 #2563eb;
 }
 
 .thai-cluster-error {
   color: #dc2626;
-  background-color: rgba(254, 226, 226, 0.95);
+  background-color: #fee2e2;
   box-shadow: inset 0 -4px 0 #dc2626;
 }
 
 .thai-cluster-pending {
-  color: #334155;
+  color: #0f172a;
 }
 
 /* Crisp hardware-accelerated shake animation on wrong key */
