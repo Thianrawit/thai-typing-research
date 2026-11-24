@@ -5,13 +5,13 @@ import {
   roundTo,
   escapeHtml,
 } from './config.js';
+import { icon } from './icons.js';
 
 const COMBINING_MARKS = new Set([
   'ั', 'ิ', 'ี', 'ึ', 'ื', 'ุ', 'ู', 'ฺ',
   '่', '้', '๊', '๋', '็', '์', 'ํ',
 ]);
 
-// Configure Chart.js global Thai font + white background plugin for clean PNG exports
 if (typeof window.Chart !== 'undefined') {
   window.Chart.defaults.font.family = "'Sarabun', 'Noto Sans Thai', sans-serif";
   window.Chart.defaults.color = '#334155';
@@ -236,7 +236,6 @@ function updateFilterLabelsAndOptions() {
 // Core Analytics Engine
 // ============================================================================
 function computeAnalytics() {
-  // 1. Apply IEP & Individual Student filters
   let filteredStudents = state.excludeIep
     ? state.students.filter((s) => !s.is_iep_excluded)
     : [...state.students];
@@ -247,8 +246,6 @@ function computeAnalytics() {
 
   const studentMap = new Map(filteredStudents.map((s) => [s.student_id, s]));
   const filteredLogs = state.logs.filter((log) => studentMap.has(log.student_id));
-
-  // 2. Per-student aggregations
   const hasAnyActualPosttest = filteredLogs.some((l) => l.mode === 'POSTTEST');
 
   const studentSummaries = filteredStudents.map((st) => {
@@ -263,8 +260,6 @@ function computeAnalytics() {
     const preLog = preLogs.length > 0 ? preLogs[preLogs.length - 1] : null;
     const postLog = postLogs.length > 0 ? postLogs[postLogs.length - 1] : null;
     const latestPracticeLog = practiceLogs.length > 0 ? practiceLogs[practiceLogs.length - 1] : null;
-
-    // For KPI & Chart 2: compare Pre vs Posttest (or Latest Practice if Posttest hasn't occurred yet)
     const compareLog = postLog || (!hasAnyActualPosttest ? latestPracticeLog : null);
 
     const preWpm = preLog ? Number(preLog.net_wpm) : null;
@@ -299,7 +294,6 @@ function computeAnalytics() {
     };
   });
 
-  // 3. KPI Metrics
   const preWpmVals = studentSummaries.map((r) => r.preWpm).filter((v) => v !== null);
   const compWpmVals = studentSummaries.map((r) => r.compareWpm).filter((v) => v !== null);
   const preAccVals = studentSummaries.map((r) => r.preAcc).filter((v) => v !== null);
@@ -313,7 +307,6 @@ function computeAnalytics() {
   const totalWarnings = filteredLogs.reduce((acc, l) => acc + Number(l.eng_lang_warnings || 0), 0);
   const avgWarnings = filteredLogs.length > 0 ? totalWarnings / filteredLogs.length : 0;
 
-  // 4. Learning Curve by week_no
   const weekBuckets = new Map();
   for (const log of filteredLogs) {
     const wk = Number(log.week_no);
@@ -331,7 +324,6 @@ function computeAnalytics() {
     meanAcc: roundTo(calcMean(weekBuckets.get(wk).accs), 2),
   }));
 
-  // 5. Top 10 Weak Keys
   const weakKeyCounts = new Map();
   for (const log of filteredLogs) {
     const wkObj = log.weak_keys_json;
@@ -348,7 +340,6 @@ function computeAnalytics() {
     .slice(0, 10)
     .map(([char, count]) => ({ char, label: formatKeyLabel(char), count }));
 
-  // 6. Shift 1 vs Shift 2 Comparison
   const shift1Logs = filteredLogs.filter((l) => Number(l.shift_no) === 1);
   const shift2Logs = filteredLogs.filter((l) => Number(l.shift_no) === 2);
   const shiftCompare = {
@@ -398,10 +389,9 @@ function renderKPIs(data) {
   const { kpi, hasAnyActualPosttest, filteredStudents } = data;
   const compLabel = hasAnyActualPosttest ? 'Posttest' : 'ฝึกครั้งล่าสุด';
 
-  // KPI 1: WPM
   els.kpiWpmPre.textContent = formatNumber(kpi.preWpmMean, 2);
   els.kpiWpmPost.textContent = formatNumber(kpi.compWpmMean, 2);
-  els.kpiWpmSub.textContent = `Pretest → ${compLabel} (N=${filteredStudents.length})`;
+  els.kpiWpmSub.textContent = `Pretest เทียบ ${compLabel} (N=${filteredStudents.length})`;
 
   if (kpi.preWpmMean !== null && kpi.compWpmMean !== null) {
     const delta = kpi.compWpmMean - kpi.preWpmMean;
@@ -421,10 +411,9 @@ function renderKPIs(data) {
     <div>${escapeHtml(compLabel)}: S.D. <strong>${formatNumber(kpi.compWpmSD, 2)}</strong> • Med <strong>${formatNumber(kpi.compWpmMed, 2)}</strong></div>
   `;
 
-  // KPI 2: Accuracy
   els.kpiAccPre.textContent = kpi.preAccMean !== null ? `${formatNumber(kpi.preAccMean, 1)}%` : '-';
   els.kpiAccPost.textContent = kpi.compAccMean !== null ? `${formatNumber(kpi.compAccMean, 1)}%` : '-';
-  els.kpiAccSub.textContent = `Pretest → ${compLabel}`;
+  els.kpiAccSub.textContent = `Pretest เทียบ ${compLabel}`;
 
   if (kpi.preAccMean !== null && kpi.compAccMean !== null) {
     const delta = kpi.compAccMean - kpi.preAccMean;
@@ -443,13 +432,11 @@ function renderKPIs(data) {
     <div>${escapeHtml(compLabel)}: S.D. <strong>${formatNumber(kpi.compAccSD, 2)}</strong> • Med <strong>${formatNumber(kpi.compAccMed, 2)}%</strong></div>
   `;
 
-  // KPI 3: Sessions & Attendance
   els.kpiAttendancePct.textContent = kpi.attendancePct !== null ? `${formatNumber(kpi.attendancePct, 1)}%` : '-';
   els.kpiSessionsCount.textContent = `${kpi.totalRecordedSessions} รอบ`;
   els.kpiLogsTotal.textContent = `บันทึกผลการพิมพ์แล้ว ${kpi.totalFilteredLogs.toLocaleString('th-TH')} รายการ`;
   els.kpiAttendanceDetail.textContent = `กลุ่มตัวอย่างที่แสดงผล: ${filteredStudents.length} คน`;
 
-  // KPI 4: Language warnings
   els.kpiWarningsTotal.textContent = kpi.totalWarnings.toLocaleString('th-TH');
   els.kpiWarningsAvg.textContent = `เฉลี่ย ${formatNumber(kpi.avgWarnings, 2)} ครั้ง/รอบฝึก`;
 }
@@ -470,7 +457,6 @@ function renderCharts(data) {
   const compLabel = data.hasAnyActualPosttest ? 'Posttest Net WPM' : 'ฝึกครั้งล่าสุด Net WPM';
   els.chartPrePostSubtitle.textContent = `Pretest Net WPM เทียบกับ ${compLabel}`;
 
-  // Chart 1: Learning Curve (Dual-Axis Line Chart)
   destroyChart('learningCurve');
   state.charts.learningCurve = new Chart(els.canvasLearningCurve, {
     type: 'line',
@@ -527,7 +513,6 @@ function renderCharts(data) {
     },
   });
 
-  // Chart 2: Pretest vs Posttest by Student (Grouped Bar)
   destroyChart('prePostStudent');
   const byNo = [...data.studentSummaries].sort((a, b) => a.student_no - b.student_no);
   state.charts.prePostStudent = new Chart(els.canvasPrePostStudent, {
@@ -572,7 +557,6 @@ function renderCharts(data) {
     },
   });
 
-  // Chart 3: Top 10 Most Missed Thai Keys (Horizontal Bar)
   destroyChart('weakKeys');
   state.charts.weakKeys = new Chart(els.canvasWeakKeys, {
     type: 'bar',
@@ -602,7 +586,6 @@ function renderCharts(data) {
     },
   });
 
-  // Chart 4: Shift 1 vs Shift 2 Comparison (Dual-Axis Grouped Bar)
   destroyChart('shiftCompare');
   state.charts.shiftCompare = new Chart(els.canvasShiftCompare, {
     type: 'bar',
@@ -659,7 +642,6 @@ function downloadChartPng(chartKey) {
   const chart = state.charts[chartKey];
   if (!chart) return;
 
-  // Render onto an offscreen white canvas to guarantee crisp pure-white PNG for Word/Thesis
   const srcCanvas = chart.canvas;
   const outCanvas = document.createElement('canvas');
   outCanvas.width = srcCanvas.width;
@@ -704,14 +686,15 @@ function renderSummaryTable(data) {
     return sortDir === 'asc' ? cmp : -cmp;
   });
 
-  // Update header sort indicators
   els.sortableHeaders.forEach((th) => {
     const ind = th.querySelector('.sort-ind');
     if (!ind) return;
     if (th.dataset.sort === sortKey) {
-      ind.textContent = sortDir === 'asc' ? '▲' : '▼';
+      ind.innerHTML = sortDir === 'asc'
+        ? icon('chevronUp', 'w-3.5 h-3.5 text-indigo-600')
+        : icon('chevronDown', 'w-3.5 h-3.5 text-indigo-600');
     } else {
-      ind.textContent = '';
+      ind.innerHTML = '';
     }
   });
 

@@ -29,7 +29,7 @@
   <section id="screen-pin" class="min-h-screen flex flex-col justify-between p-4 md:p-6 bg-gradient-to-br from-sky-50 via-white to-indigo-50">
     <div class="flex justify-end">
       <a href="./admin.html" title="สำหรับคุณครู (Admin)" class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-blue-600 px-3 py-1.5 rounded-full hover:bg-white/80 transition">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
         หน้าคุณครู
       </a>
     </div>
@@ -37,15 +37,18 @@
     <div class="w-full max-w-md mx-auto">
       <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/70 border border-slate-100 p-7 md:p-9 text-center">
         <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/30">
-          <svg class="w-9 h-9" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="3"/><path stroke-linecap="round" d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 13h.01M10 13h.01M14 13h.01M18 13h.01M8 16h8"/></svg>
+          <svg class="w-9 h-9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.001M10 8h.001M14 8h.001M18 8h.001M8 12h.001M12 12h.001M16 12h.001M7 16h10"/></svg>
         </div>
         <h1 class="text-2xl md:text-3xl font-extrabold text-slate-900">ฝึกพิมพ์สัมผัสภาษาไทย ป.6</h1>
         <p class="text-slate-500 mt-1.5 text-base">กรอกรหัส PIN 4 หลักจากหน้าจอกระดานของคุณครู</p>
 
         <!-- Offline Pending Logs Flush Indicator -->
         <div id="pin-offline-banner" class="hidden mt-4 px-3.5 py-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm flex items-center justify-between gap-2 text-left">
-          <span id="pin-offline-text" class="font-medium">กำลังส่งข้อมูลคะแนนที่ค้างอยู่ในเครื่อง...</span>
-          <button id="pin-offline-retry" type="button" class="shrink-0 text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition">ส่งอีกครั้ง</button>
+          <span id="pin-offline-text" class="font-medium inline-flex items-center gap-1.5">กำลังส่งข้อมูลคะแนนที่ค้างอยู่ในเครื่อง...</span>
+          <button id="pin-offline-retry" type="button" class="shrink-0 inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            ส่งอีกครั้ง
+          </button>
         </div>
 
         <form id="pin-form" class="mt-6 space-y-4" autocomplete="off">
@@ -68,9 +71,10 @@
           <button
             id="pin-submit-btn"
             type="submit"
-            class="w-full py-3.5 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold text-lg shadow-lg shadow-blue-600/25 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            class="w-full inline-flex items-center justify-center gap-2 py-3.5 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold text-lg shadow-lg shadow-blue-600/25 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            เข้าสู่ห้องเรียน →
+            <span>เข้าสู่ห้องเรียน</span>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
           </button>
         </form>
       </div>
@@ -78,7 +82,7 @@
 
     <footer class="flex items-center justify-center gap-4 text-xs text-slate-400">
       <button id="device-tag-btn" type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 font-semibold shadow-sm transition">
-        <span>🖥️</span>
+        <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
         <span>เครื่อง: <strong id="device-tag-label">PC-0000</strong></span>
         <span class="text-slate-400">(ตั้งค่า)</span>
       </button>
@@ -86,7 +90,7 @@
   </section>
 
   <!-- ======================================================================
-       SCREEN 2: STUDENT ROSTER SELECTION (22 STUDENTS / 2 SHIFTS)
+       SCREEN 2: STUDENT ROSTER SELECTION (22 STUDENTS / 2 SHIFTS FULL WIDTH)
        ====================================================================== -->
   <section id="screen-roster" class="hidden min-h-screen bg-slate-50 p-4 md:p-6">
     <div class="max-w-6xl mx-auto space-y-5">
@@ -95,29 +99,31 @@
         <div class="space-y-1">
           <div class="flex flex-wrap items-center gap-2">
             <span id="roster-session-badge" class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800">สัปดาห์ที่ 1 • ฝึกทักษะ</span>
-            <span id="roster-duration-label" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">⏱️ 5 นาที</span>
-            <span id="roster-progress-label" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">ส่งแล้ว 0 / 22 คน</span>
+            <span id="roster-duration-label" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700"></span>
+            <span id="roster-progress-label" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">ส่งแล้ว 0 / 22 คน</span>
           </div>
           <h2 id="roster-stage-title" class="text-xl md:text-2xl font-extrabold text-slate-900">เลือกชื่อของตนเองเพื่อเริ่มฝึกพิมพ์</h2>
         </div>
 
         <div class="flex items-center gap-2">
           <button id="roster-refresh-btn" type="button" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm transition">
-            🔄 รีเฟรชรายชื่อ
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            <span>รีเฟรชรายชื่อ</span>
           </button>
           <button id="roster-back-pin-btn" type="button" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-600 font-semibold text-sm transition">
-            ← เปลี่ยน PIN
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            <span>เปลี่ยน PIN</span>
           </button>
         </div>
       </div>
 
-      <!-- Shift 1 & Shift 2 Columns -->
+      <!-- Shift 1 & Shift 2 Side-by-Side Containers, 1 Full-Width Column Inside Each -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <!-- Shift 1 -->
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 md:p-5">
           <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
-            <div class="flex items-center gap-2">
-              <span class="w-8 h-8 rounded-xl bg-sky-100 text-sky-700 font-extrabold flex items-center justify-center text-sm">1</span>
+            <div class="flex items-center gap-2.5">
+              <span class="w-8 h-8 rounded-xl bg-sky-100 text-sky-700 font-extrabold flex items-center justify-center text-sm shrink-0">1</span>
               <div>
                 <h3 class="font-extrabold text-slate-900 text-lg">ผลัดที่ 1 (เลขที่ 1–11)</h3>
                 <p class="text-xs text-slate-500">แตะที่ชื่อของตนเองเพื่อเริ่มรอบการฝึก</p>
@@ -125,14 +131,14 @@
             </div>
             <span id="shift1-count" class="text-xs font-bold px-2.5 py-1 rounded-full bg-sky-50 text-sky-700">0/11</span>
           </div>
-          <div id="shift1-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"></div>
+          <div id="shift1-grid" class="grid grid-cols-1 gap-2"></div>
         </div>
 
         <!-- Shift 2 -->
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 md:p-5">
           <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
-            <div class="flex items-center gap-2">
-              <span class="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-700 font-extrabold flex items-center justify-center text-sm">2</span>
+            <div class="flex items-center gap-2.5">
+              <span class="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-700 font-extrabold flex items-center justify-center text-sm shrink-0">2</span>
               <div>
                 <h3 class="font-extrabold text-slate-900 text-lg">ผลัดที่ 2 (เลขที่ 12–22)</h3>
                 <p class="text-xs text-slate-500">แตะที่ชื่อของตนเองเพื่อเริ่มรอบการฝึก</p>
@@ -140,7 +146,7 @@
             </div>
             <span id="shift2-count" class="text-xs font-bold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700">0/11</span>
           </div>
-          <div id="shift2-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"></div>
+          <div id="shift2-grid" class="grid grid-cols-1 gap-2"></div>
         </div>
       </div>
     </div>
@@ -168,7 +174,7 @@
         <div class="flex items-center gap-2 md:gap-4 shrink-0">
           <!-- Countdown Timer -->
           <div class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-900 text-white font-mono">
-            <span class="text-xs opacity-75">⏱️</span>
+            <svg class="w-4 h-4 opacity-80" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             <span id="hud-timer" class="text-lg md:text-xl font-extrabold tracking-wider">05:00</span>
           </div>
 
@@ -186,42 +192,44 @@
             <div class="w-px h-6 bg-slate-300"></div>
             <div class="text-center">
               <div class="text-[10px] font-semibold text-slate-500 leading-none">Combo</div>
-              <div id="hud-combo" class="text-base font-extrabold text-orange-500 leading-tight">0 🔥</div>
+              <div id="hud-combo" class="text-base font-extrabold text-orange-500 leading-tight inline-flex items-center gap-1">0</div>
             </div>
           </div>
 
           <!-- Mute Toggle -->
-          <button id="hud-mute-btn" type="button" title="เปิด/ปิดเสียง" class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center text-lg transition">
-            🔊
+          <button id="hud-mute-btn" type="button" title="เปิด/ปิดเสียง" class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
           </button>
         </div>
       </div>
     </header>
 
     <!-- Main Gameplay Workspace -->
-    <main class="flex-1 min-h-0 flex flex-col justify-between max-w-6xl w-full mx-auto px-3 md:px-5 py-2.5 gap-2">
+    <main class="flex-1 min-h-0 flex flex-col justify-between max-w-6xl w-full mx-auto px-3 md:px-5 py-2 gap-2">
       <!-- Language Warning Banner Slot (Fixed Height -> Zero Layout Shift) -->
       <div class="shrink-0 h-9 flex items-center justify-center">
-        <div id="lang-warning-banner" class="hidden w-full max-w-2xl text-center px-4 py-1.5 rounded-xl bg-amber-300 border-2 border-amber-500 text-slate-950 font-extrabold text-sm md:text-base shadow-md">
-          ⚠️ ลืมเปลี่ยนภาษา! กดปุ่มตัวหนอน (~) มุมซ้ายบน
+        <div id="lang-warning-banner" class="hidden w-full max-w-2xl inline-flex items-center justify-center gap-2 text-center px-4 py-1.5 rounded-xl bg-amber-300 border-2 border-amber-500 text-slate-950 font-extrabold text-sm md:text-base shadow-md">
+          <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span>ลืมเปลี่ยนภาษา! กดปุ่มตัวหนอน (~) มุมซ้ายบน</span>
         </div>
         <div id="guide-mode-badge" class="hidden inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-slate-200 text-slate-700"></div>
       </div>
 
       <!-- Word Focus Zone -->
       <div class="flex-1 min-h-0 flex flex-col items-center justify-center">
-        <div id="word-card" class="w-full max-w-3xl bg-white rounded-3xl border-2 border-slate-200 shadow-sm px-6 py-4 md:py-5 text-center transition-colors">
-          <div id="current-word-display" class="thai-word-display text-5xl md:text-6xl font-bold tracking-wider select-none min-h-[1.9em] flex items-center justify-center flex-wrap"></div>
+        <div id="word-card" class="w-full max-w-3xl bg-white rounded-3xl border-2 border-slate-200 shadow-sm px-6 py-4 text-center transition-colors">
+          <div id="current-word-display" class="thai-word-display py-4 text-5xl md:text-6xl font-bold select-none flex items-center justify-center flex-wrap"></div>
 
-          <!-- Subtle character sequence indicator for Thai vowels/tones clarity -->
-          <div id="char-step-strip" class="mt-1 flex items-center justify-center gap-1 flex-wrap min-h-[26px]"></div>
+          <!-- Combining-Mark Sequence Bar (shown only when active grapheme cluster has >1 char; fixed min-height prevents layout jump) -->
+          <div id="char-step-strip" class="mt-0.5 flex items-center justify-center gap-1.5 flex-wrap min-h-[30px]"></div>
 
           <!-- Next 2 preview words -->
-          <div id="next-words-preview" class="mt-2.5 pt-2.5 border-t border-slate-100 flex items-center justify-center gap-5 text-lg md:text-xl font-semibold text-slate-400 select-none"></div>
+          <div id="next-words-preview" class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-center gap-5 text-lg md:text-xl font-semibold text-slate-400 select-none"></div>
         </div>
 
-        <p id="start-prompt-hint" class="mt-2 text-sm font-semibold text-blue-600 animate-pulse">
-          ⌨️ กดแป้นตัวอักษรแรกเพื่อเริ่มจับเวลา...
+        <p id="start-prompt-hint" class="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 animate-pulse">
+          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.001M10 8h.001M14 8h.001M18 8h.001M8 12h.001M12 12h.001M16 12h.001M7 16h10"/></svg>
+          <span>กดแป้นตัวอักษรแรกเพื่อเริ่มจับเวลา...</span>
         </p>
       </div>
 
@@ -238,7 +246,7 @@
   <section id="screen-summary" class="hidden min-h-screen flex items-center justify-center p-4 md:p-6 bg-gradient-to-br from-emerald-50 via-white to-sky-50">
     <div class="w-full max-w-2xl bg-white rounded-3xl shadow-xl border border-slate-100 p-6 md:p-8 text-center space-y-5">
       <div>
-        <div id="summary-stars" class="text-5xl md:text-6xl tracking-widest mb-2">⭐⭐⭐</div>
+        <div id="summary-stars" class="flex items-center justify-center gap-2 mb-2 text-amber-400"></div>
         <h2 class="text-2xl md:text-3xl font-extrabold text-slate-900">เยี่ยมมาก! จบรอบการฝึกแล้ว</h2>
         <p id="summary-student-label" class="text-slate-600 font-semibold mt-1"></p>
         <p id="summary-stage-label" class="text-xs text-slate-400 mt-0.5"></p>
@@ -264,7 +272,7 @@
         </div>
         <div class="p-3.5 rounded-2xl bg-orange-50 border border-orange-100">
           <div class="text-xs font-bold text-orange-600">Combo สูงสุด</div>
-          <div id="summary-combo" class="text-2xl font-extrabold text-orange-600 mt-0.5">0 🔥</div>
+          <div id="summary-combo" class="text-2xl font-extrabold text-orange-600 mt-0.5 inline-flex items-center justify-center gap-1">0</div>
         </div>
         <div class="p-3.5 rounded-2xl bg-amber-50 border border-amber-100">
           <div class="text-xs font-bold text-amber-700">เตือนเปลี่ยนภาษา</div>
@@ -275,11 +283,12 @@
       <!-- Submission Status -->
       <div class="space-y-2">
         <div id="summary-save-status" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-blue-50 text-blue-700 border border-blue-200">
-          ⏳ กำลังบันทึกคะแนนเข้าสู่ระบบ...
+          กำลังบันทึกคะแนนเข้าสู่ระบบ...
         </div>
         <div>
-          <button id="summary-retry-btn" type="button" class="hidden px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm shadow transition">
-            🔄 ส่งคะแนนอีกครั้ง
+          <button id="summary-retry-btn" type="button" class="hidden inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm shadow transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            <span>ส่งคะแนนอีกครั้ง</span>
           </button>
         </div>
       </div>
@@ -310,15 +319,17 @@
         <h3 id="confirm-student-name" class="text-2xl font-extrabold text-slate-900 mt-1">เลขที่ 1 — ชื่อนักเรียน</h3>
         <p id="confirm-student-shift" class="text-sm text-slate-500 mt-1">ผลัดที่ 1</p>
       </div>
-      <div class="bg-amber-50 border border-amber-200 rounded-2xl p-3 text-xs text-amber-800 font-medium">
-        ⚠️ ตรวจสอบชื่อให้ถูกต้อง! เมื่อเล่นจบแล้วจะไม่สามารถเข้าชื่อเดิมซ้ำในรอบนี้ได้
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl p-3 text-xs text-amber-800 font-medium inline-flex items-start gap-2 text-left">
+        <svg class="w-4 h-4 shrink-0 mt-0.5 text-amber-600" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <span>ตรวจสอบชื่อให้ถูกต้อง! เมื่อเล่นจบแล้วจะไม่สามารถเข้าชื่อเดิมซ้ำในรอบนี้ได้</span>
       </div>
       <div class="grid grid-cols-2 gap-3">
         <button id="confirm-cancel-btn" type="button" class="py-3 px-4 rounded-2xl border-2 border-slate-200 hover:bg-slate-100 text-slate-700 font-bold transition">
           เปลี่ยนคน
         </button>
-        <button id="confirm-start-btn" type="button" class="py-3 px-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-lg shadow-blue-600/25 transition">
-          เริ่มเล่น 🚀
+        <button id="confirm-start-btn" type="button" class="inline-flex items-center justify-center gap-1.5 py-3 px-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-lg shadow-blue-600/25 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+          <span>เริ่มเล่น</span>
         </button>
       </div>
     </div>
@@ -330,8 +341,13 @@
   <div id="device-modal" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
     <div class="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 space-y-4">
       <div class="flex items-center justify-between">
-        <h3 class="text-lg font-extrabold text-slate-900">🖥️ ตั้งชื่อเครื่องคอมพิวเตอร์</h3>
-        <button id="device-cancel-btn" type="button" class="text-slate-400 hover:text-slate-700 text-xl font-bold px-2">×</button>
+        <h3 class="text-lg font-extrabold text-slate-900 inline-flex items-center gap-2">
+          <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <span>ตั้งชื่อเครื่องคอมพิวเตอร์</span>
+        </h3>
+        <button id="device-cancel-btn" type="button" aria-label="ปิดหน้าต่าง" class="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
       </div>
       <p class="text-xs text-slate-500">เลือกหมายเลขเครื่องเพื่อให้คุณครูตรวจสอบได้ง่ายในหน้าติดตามผลสด</p>
       <div id="device-presets" class="grid grid-cols-4 gap-2"></div>

@@ -1,62 +1,49 @@
 # ReviewIDE — Grade 6 Thai Typing Research Web App
 
-## 1. Created Files (12 Target Files)
+## 1. Project Files
 
 | # | File | Role |
 |---|------|------|
-| 1 | `css/style.css` | Sarabun Thai typography rules (zero clipping on above/below vowels & tone marks), hardware-accelerated shake/pulse animations, responsive 60 FPS Kedmanee virtual keyboard styles |
-| 2 | `js/config.js` | Supabase ESM client (`@supabase/supabase-js@2`), 13 `STAGES` metadata definitions, `MODE_LABELS`, `getDeviceTag()`/`setDeviceTag()`, `generateUUID()`, UTF-8 BOM `downloadCSV()`, `formatNumber()`, `roundTo()`, `escapeHtml()` |
-| 3 | `js/sound.js` | Pure Web Audio API synthesizer (`soundEngine`: `playCorrect`, `playError`, `playWordComplete`, `playFinish`, `isMuted`, `toggleMute` persisted in `localStorage`) |
-| 4 | `js/words.js` | 13 authentic Grade 6 OBEC (สพฐ. ป.6) Thai vocabulary banks (`PRETEST_A`, `POSTTEST_A`, `POSTTEST_B` @ 50 words each; `STAGE_1`–`STAGE_10` @ 42–54 words each) with canonical Unicode order and deterministic order for tests |
-| 5 | `js/keyboard.js` | Verified TIS 820-2538 Thai Kedmanee keymap (`KEDMANEE_ROWS`, `KEDMANEE_CHAR_MAP`) and `KedmaneeKeyboard` class (`FULL` / `ON_ERROR` / `NONE` guide modes, Shift `"กดค้าง"` + shifted layer visual swap, `event.code` press feedback, amber hint on error) |
-| 6 | `js/game.js` | Student gameplay controller: 4-screen state machine, `verify_session_and_get_roster` RPC, Shift 1/2 roster lock, Unicode strict-stop engine, Latin-key Language Guard, Pretest/Posttest Research Integrity Lock, exact CPM/WPM/Accuracy formulas, `localStorage`-first offline-resilient `submit_typing_log` queue (3 retries + startup auto-flush), 15-second auto-logout |
-| 7 | `js/admin.js` | Teacher control panel: Supabase Auth (`signInWithPassword`), session creation/PIN reroll/auto-close prior active sessions, Giant Classroom PIN hero card, 5-second auto-refresh 22-student Live Monitor split by Shift 1/2 with `"ลบเพื่อสอบใหม่"`, past sessions toggle, and 22-student Roster Manager + Excel/Word Bulk Paste |
-| 8 | `js/dashboard.js` | Research analytics dashboard: Auth guard, sticky IEP Exclusion toggle (`All` vs `Research Group`), individual student filter, 4 KPI cards (Mean/SD/Median/Attendance/Eng Warnings), 4 Chart.js charts with white-background PNG download, sortable summary table, and UTF-8 BOM CSV exports (Raw Logs & SPSS/Jamovi Pre-Post Paired) |
-| 9 | `index.html` | Student interface (PIN entry + PC Tag modal, 2-shift Roster + Confirmation modal, 100vh zero-scroll Gameplay screen, Summary & 15s Auto-Logout) |
-| 10 | `admin.html` | Teacher Control Panel UI (Login, Session Control & Live Monitor tab, Student Roster Manager tab, Delete confirmation modal) |
-| 11 | `dashboard.html` | Research Analytics & Export UI (Login, sticky Filter bar, KPI grid, 4 Chart.js cards, Sortable table & CSV export buttons) |
-| 12 | `ReviewIDE.MD` | Architecture summary, verification report, and deployment/testing guide |
+| 1 | `css/style.css` | Native OpenType Thai shaping (`font-feature-settings: "ccmp" 1, "mark" 1, "mkmk" 1`, `letter-spacing: 0`, `line-height: 1.9`), grapheme-cluster highlight states, hardware-accelerated shake/pulse animations, responsive 60 FPS Kedmanee virtual keyboard styles |
+| 2 | `js/icons.js` | Crisp Lucide-style inline SVG icon library (`icon(name, className)`) replacing 100% of emojis and arrow/check/symbol glyphs across all pages |
+| 3 | `js/config.js` | Supabase ESM client (`@supabase/supabase-js@2`), 13 `STAGES` metadata definitions, `MODE_LABELS`, `getDeviceTag()`/`setDeviceTag()`, `generateUUID()`, UTF-8 BOM `downloadCSV()`, `formatNumber()`, `roundTo()`, `escapeHtml()` |
+| 4 | `js/sound.js` | Pure Web Audio API synthesizer (`soundEngine`: `playCorrect`, `playError`, `playWordComplete`, `playFinish`, `isMuted`, `toggleMute` persisted in `localStorage`) |
+| 5 | `js/words.js` | 13 authentic Grade 6 OBEC (สพฐ. ป.6) Thai vocabulary banks (`PRETEST_A`, `POSTTEST_A`, `POSTTEST_B` @ 50 words each; `STAGE_1`–`STAGE_10` @ 42–54 words each) audited for strict canonical Thai Unicode order |
+| 6 | `js/keyboard.js` | Verified TIS 820-2538 Thai Kedmanee keymap (`KEDMANEE_ROWS`, `KEDMANEE_CHAR_MAP`) and `KedmaneeKeyboard` class (`FULL` / `ON_ERROR` / `NONE` guide modes, Shift `"กดค้าง"` + shifted layer swap, SVG modifier icons, `event.code` press feedback, amber hint on error) |
+| 7 | `js/game.js` | Student gameplay controller: 4-screen state machine, full-width 1-column-per-shift roster (zero name truncation), `Intl.Segmenter('th', { granularity: 'grapheme' })` cluster rendering + combining-mark sequence bar, Unicode strict-stop engine, Latin-key Language Guard, Pretest/Posttest Research Integrity Lock, exact CPM/WPM/Accuracy formulas, `localStorage`-first offline-resilient `submit_typing_log` queue, 15-second auto-logout |
+| 8 | `js/admin.js` | Teacher control panel: Supabase Auth (`signInWithPassword`), session creation/PIN reroll/auto-close prior active sessions, Giant Classroom PIN hero card with `"คัดลอกรหัส"` + `"ลบรหัสรอบ"`, 5-second auto-refresh 22-student Live Monitor with `"ลบเพื่อสอบใหม่"`, Past Sessions table with `"คัดลอกรหัส"`, re-open/close toggle, and `"ลบรหัสรอบ"` (`ON DELETE CASCADE` confirmation modal), plus 22-student Roster Manager & Bulk Paste |
+| 9 | `js/dashboard.js` | Research analytics dashboard: Auth guard, sticky IEP Exclusion toggle, individual student filter, 4 KPI cards (Mean/SD/Median/Attendance/Eng Warnings), 4 Chart.js charts with white-background PNG download, sortable summary table with SVG sort chevrons, and UTF-8 BOM CSV exports (Raw Logs & SPSS/Jamovi Pre-Post Paired) |
+| 10 | `index.html` | Student interface (PIN entry + PC Tag modal, 2-shift full-width Roster + Confirmation modal, 100vh zero-scroll Gameplay screen, Summary & 15s Auto-Logout) — 100% inline SVG icons |
+| 11 | `admin.html` | Teacher Control Panel UI (Login, Session Control & Live Monitor tab, Student Roster Manager tab, Delete Log & Delete Session confirmation modals) — 100% inline SVG icons |
+| 12 | `dashboard.html` | Research Analytics & Export UI (Login, sticky Filter bar, KPI grid, 4 Chart.js cards, Sortable table & CSV export buttons) — 100% inline SVG icons |
+| 13 | `ReviewIDE.MD` | Architecture summary, verification report, and changelog |
 
 ---
 
-## 2. Architecture Summary
+## 2. Targeted Fixes Applied (Revision 2)
 
-- **Zero-Build Static Stack:** Pure HTML5 + Tailwind CSS CDN + Vanilla ES Modules (`type="module"`) + Chart.js 4.4.7 CDN + `@supabase/supabase-js@2` ESM CDN. All asset and module paths are relative (`./css/...`, `./js/...`, `./index.html`, `./admin.html`, `./dashboard.html`) for seamless deployment under GitHub Pages subpaths (`/thai-typing-research/`).
-- **Security & Auth Boundary:**
-  - `index.html` / `js/game.js` never authenticates into Supabase Auth and invokes ONLY `verify_session_and_get_roster` and `submit_typing_log`.
-  - `admin.html` and `dashboard.html` authenticate teachers via `supabase.auth.signInWithPassword()`.
-  - Zero `service_role`/`sb_secret_` keys, zero hardcoded passwords, and zero manual `Authorization: Bearer sb_publishable_...` headers exist anywhere in the repository.
-- **Research Integrity & Psychometric Design:**
-  - `PRETEST` and `POSTTEST` force `guideMode = 'NONE'` (lights and Shift hints locked OFF) and serve words in fixed deterministic order.
-  - `PRETEST_A` (50 words: avg 7.64 chars, 12.6% Shift chars) and `POSTTEST_B` (50 parallel non-overlapping words: avg 7.98 chars, 12.3% Shift chars) provide comparable difficulty without vocabulary overlap.
-  - Offline-resilient submission persists `{ p_log_id: UUID, ... }` to `localStorage` **before** calling `submit_typing_log`, preventing score loss during school Wi-Fi drops and guaranteeing idempotency via fixed `log_id`.
-  - Dashboard analytics calculate sample S.D. ($n-1$), exact Median, Mean, and export UTF-8 BOM CSVs ready for Excel, SPSS, and Jamovi Paired t-test / Wilcoxon Signed-Rank Test.
+1. **Fix 1 — Native Thai Vowel & Tone Mark Stacking + Word Normalization (`css/style.css`, `js/game.js`, `index.html`, `js/words.js`):**
+   - Replaced per-character splitting in `#current-word-display` with Thai Grapheme Cluster grouping via `Intl.Segmenter('th', { granularity: 'grapheme' })` (+ regex fallback and `ำ` U+0E33 merging so `น้ำ`, `สิ่`, `ล้`, `ขึ้` each live inside ONE contiguous `<span>` text node).
+   - Removed `tracking-wider` on `#current-word-display` and enforced `letter-spacing: 0 !important; font-feature-settings: "ccmp" 1, "mark" 1, "mkmk" 1; line-height: 1.9 !important;` with generous `py-4` vertical padding.
+   - Mapped each cluster to `[startIdx, endIdx]` while preserving strict character-by-character `Array.from(word)` validation. Added the compact Combining-Mark Sequence Bar below the focus word whenever the active cluster has >1 character (prefixing combining marks with `◌` and maintaining a fixed `min-h-[30px]` placeholder when length is 1 to eliminate layout jump).
+   - Audited 100% of words across all 13 `WORD_BANKS` for canonical Thai Unicode order (`0` malformed sequences, `0` double `เเ`, `0` decomposed `ำ`).
+2. **Fix 2 — 100% Inline SVG Icons (`js/icons.js`, `index.html`, `admin.html`, `dashboard.html`, `js/keyboard.js`, `js/game.js`, `js/admin.js`, `js/dashboard.js`):**
+   - Created `js/icons.js` exporting Lucide-style `icon(name, className)` covering all 25 required icons plus UI/keyboard utility icons.
+   - Replaced 100% of emojis and arrow/check/cross/star/triangle/keycap text symbols across every HTML and JS file with crisp inline SVGs.
+3. **Fix 3 — Delete Session (`ลบรหัสรอบ`) & Copy PIN (`คัดลอกรหัส`) (`admin.html`, `js/admin.js`):**
+   - Added `"ลบรหัสรอบ"` (`trash2` SVG) on both the Active Session Hero Card and every row in the Past Sessions table, opening `#delete-session-modal` showing `session_id`, `session_pin`, and the permanent `ON DELETE CASCADE` warning before executing `supabase.from('sessions').delete().eq('session_id', sessionId)` and refreshing all views.
+   - Added `"คัดลอกรหัส"` (`copy` SVG) next to the 4-digit PIN on both the Active Session Hero Card and every Past Sessions row with `"คัดลอกแล้ว"` (`check` SVG) feedback.
+4. **Fix 4 — Full Student Names Without Truncation (`index.html`, `js/game.js`):**
+   - Changed `#shift1-grid` and `#shift2-grid` inside the side-by-side shift containers (`lg:grid-cols-2`) to `grid-cols-1 gap-2`.
+   - Removed `truncate` / `whitespace-nowrap` from student names in favor of `whitespace-normal break-words text-left leading-snug`, compact `py-2.5 px-3.5` padding, `chevronRight` SVG on available cards, and compact `"เล่นครบแล้ว"` pill with `check` SVG on completed rows.
 
 ---
 
 ## 3. Automated Verification Checklist
 
-- [x] **Preserve `.github/workflows/keep-alive.yml`:** Synced from `origin/main` and verified 100% untouched before committing and pushing.
-- [x] **Relative Imports & Links:** All ES module imports (`./config.js`, `./sound.js`, `./words.js`, `./keyboard.js`) and HTML asset/page links verified on disk for GitHub Pages subpath compatibility.
-- [x] **JS Syntax Check:** `node --check` passed on all 7 JS modules (`ALL_SYNTAX_OK`).
-- [x] **RPC Contract Match:** Verified `verify_session_and_get_roster({ p_pin })` and all 18 `submit_typing_log` parameters (`p_pin`, `p_log_id`, `p_student_id`, `p_shift_no`, `p_duration_actual_sec`, `p_total_keystrokes`, `p_correct_chars`, `p_error_keystrokes`, `p_words_completed`, `p_gross_cpm`, `p_net_cpm`, `p_gross_wpm`, `p_net_wpm`, `p_accuracy_pct`, `p_max_combo`, `p_eng_lang_warnings`, `p_weak_keys_json`, `p_device_tag`) character-for-character against `SKILL.md`.
-- [x] **Keymap & Vocabulary Coverage:** Automated Node validator verified:
-  - All 44 Thai consonants + vowels + tone marks exist in `KEDMANEE_CHAR_MAP`.
-  - 0 unmapped characters, 0 duplicate words, 0 non-canonical tone/vowel orders, 0 decomposed `ำ` or double `เเ` across all 13 banks.
-  - `STAGE_1` strictly uses `{ฟ ห ก ด เ ้ ่ า ส ว ง}` (0% Shift); `STAGE_3` strictly Row 2+3 unshifted (0% Shift); `STAGE_4` strictly Row 4+3 unshifted (0% Shift); `STAGE_5` strictly unshifted (0% Shift); `STAGE_6` covers all 18 target Shift chars (`ฆ ฉ ธ ณ ญ ฐ ษ ศ ซ ฮ โ ฤ ฒ ฬ ็ ๋ ๊ ์`) with 100% of words requiring Shift.
-- [x] **DOM Integrity:** Every `document.getElementById(...)` call in `game.js`, `admin.js`, and `dashboard.js` verified against its corresponding HTML file (`0` mismatches).
-- [x] **Research Integrity Lock:** Confirmed `getEffectiveGuideMode()` returns `'NONE'` whenever `session.mode === 'PRETEST' || session.mode === 'POSTTEST'`, and `KedmaneeKeyboard.highlightTarget()` / `flashKeyPress()` never reveal target hints in `'NONE'` mode.
-
----
-
-## 4. Deployment & Testing Steps
-
-1. **Local Preview (Static HTTP Server required for ES Modules):**
-   - Run `python -m http.server 8080` (or VS Code Live Server) in `d:\Program\thai-typing-research`.
-   - Open `http://localhost:8080/admin.html` → sign in with your Supabase Teacher email/password → verify the 22-student roster in Tab 2 → create a test session (e.g., Week 0 `PRETEST` / `PRETEST_A`, 60s) and note the 4-digit PIN.
-   - Open `http://localhost:8080/index.html` in a second tab → set PC tag (e.g., `PC-01`) → enter the 4-digit PIN → pick Student #1 → verify Pretest locks keyboard guide highlights OFF, Latin keys trigger the yellow `~` banner without penalty, and finishing auto-submits and counts down 15s back to the locked roster.
-   - Open `http://localhost:8080/dashboard.html` → verify KPIs, all 4 charts, white-background PNG downloads, IEP toggle, and both CSV exports open cleanly in Thai inside Excel.
-2. **GitHub Pages Deployment:**
-   - Commit and push all 12 files (keeping `.github/workflows/keep-alive.yml` intact in the remote repo) to your `main` branch.
-   - In GitHub Repository Settings → **Pages** → Source: **Deploy from a branch** (`main` / `/ (root)`).
-   - Access student app at `https://<username>.github.io/thai-typing-research/`, teacher panel at `.../admin.html`, and dashboard at `.../dashboard.html`.
+- [x] **Preserve `.github/workflows/keep-alive.yml`:** Confirmed 100% untouched.
+- [x] **JS Syntax Check:** `node --check` passed across all 8 ES modules (`js/icons.js`, `js/config.js`, `js/sound.js`, `js/words.js`, `js/keyboard.js`, `js/game.js`, `js/admin.js`, `js/dashboard.js`).
+- [x] **Zero Emojis / Text Symbols:** Regex audit across all HTML, CSS, and JS files confirmed `0` emojis and `0` forbidden arrow/check/cross/star/triangle symbols (only `◌` U+25CC retained for combining-mark key/step prefixes).
+- [x] **Icon Integrity:** All 25 required icons in `js/icons.js` and every `icon(...)` invocation across JS modules verified non-empty.
+- [x] **Thai Grapheme Cluster & Canonical Unicode Audit:** Every word in all 13 `WORD_BANKS` verified for canonical order, 100% `KEDMANEE_CHAR_MAP` coverage, and exact `Array.from(word)` index alignment after grapheme segmentation.
+- [x] **DOM Integrity & RPC Contract:** Zero missing DOM IDs across `index.html`/`admin.html`/`dashboard.html`; `verify_session_and_get_roster` and all 18 `submit_typing_log` params preserved verbatim; `sessions.delete().eq('session_id', ...)` wired with confirmation modal.

@@ -1,4 +1,5 @@
 // Verified Standard Thai Kedmanee Keymap (TIS 820-2538)
+import { icon } from './icons.js';
 
 export const KEDMANEE_ROWS = [
   [
@@ -15,7 +16,7 @@ export const KEDMANEE_ROWS = [
     { code: 'Digit0', normal: 'จ', shift: '๗', width: 1.0 },
     { code: 'Minus', normal: 'ข', shift: '๘', width: 1.0 },
     { code: 'Equal', normal: 'ช', shift: '๙', width: 1.0 },
-    { code: 'Backspace', label: '⌫ ลบ', isModifier: true, width: 1.7 },
+    { code: 'Backspace', label: 'ลบ', iconName: 'deleteKey', isModifier: true, width: 1.7 },
   ],
   [
     { code: 'Tab', label: 'Tab', isModifier: true, width: 1.45 },
@@ -46,10 +47,10 @@ export const KEDMANEE_ROWS = [
     { code: 'KeyL', normal: 'ส', shift: 'ศ', isHome: true, width: 1.0 },
     { code: 'Semicolon', normal: 'ว', shift: 'ซ', isHome: true, width: 1.0 },
     { code: 'Quote', normal: 'ง', shift: '.', width: 1.0 },
-    { code: 'Enter', label: 'Enter ↵', isModifier: true, width: 1.95 },
+    { code: 'Enter', label: 'Enter', iconName: 'cornerDownLeft', isModifier: true, width: 1.95 },
   ],
   [
-    { code: 'ShiftLeft', label: 'Shift ⇧', isModifier: true, isShift: true, width: 2.25 },
+    { code: 'ShiftLeft', label: 'Shift', iconName: 'arrowUp', isModifier: true, isShift: true, width: 2.25 },
     { code: 'KeyZ', normal: 'ผ', shift: '(', width: 1.0 },
     { code: 'KeyX', normal: 'ป', shift: ')', width: 1.0 },
     { code: 'KeyC', normal: 'แ', shift: 'ฉ', width: 1.0 },
@@ -60,7 +61,7 @@ export const KEDMANEE_ROWS = [
     { code: 'Comma', normal: 'ม', shift: 'ฒ', width: 1.0 },
     { code: 'Period', normal: 'ใ', shift: 'ฬ', width: 1.0 },
     { code: 'Slash', normal: 'ฝ', shift: 'ฦ', width: 1.0 },
-    { code: 'ShiftRight', label: 'Shift ⇧', isModifier: true, isShift: true, width: 2.45 },
+    { code: 'ShiftRight', label: 'Shift', iconName: 'arrowUp', isModifier: true, isShift: true, width: 2.45 },
   ],
   [
     { code: 'SpacerL', label: '', isSpacer: true, width: 3.4 },
@@ -140,14 +141,12 @@ export class KedmaneeKeyboard {
         if (def.isSpace) keyEl.classList.add('kb-key-space');
 
         if (def.isShift) {
-          const labelSpan = document.createElement('span');
-          labelSpan.textContent = def.label;
-          const badgeSpan = document.createElement('span');
-          badgeSpan.className = 'kb-shift-hold-badge';
-          badgeSpan.textContent = 'กดค้าง';
-          keyEl.appendChild(labelSpan);
-          keyEl.appendChild(badgeSpan);
-        } else if (def.isModifier || def.isSpace) {
+          keyEl.innerHTML = `${icon(def.iconName, 'w-3.5 h-3.5')}<span>${def.label}</span><span class="kb-shift-hold-badge">กดค้าง</span>`;
+        } else if (def.isModifier) {
+          keyEl.innerHTML = def.iconName
+            ? `${icon(def.iconName, 'w-3.5 h-3.5')}<span>${def.label}</span>`
+            : `<span>${def.label}</span>`;
+        } else if (def.isSpace) {
           keyEl.textContent = def.label;
         } else {
           const shiftSpan = document.createElement('span');
@@ -210,8 +209,6 @@ export class KedmaneeKeyboard {
     this.currentExpectedChar = expectedChar || null;
     this.clearHighlights();
 
-    // Research Integrity Lock: NEVER highlight target in NONE mode (Pretest/Posttest)
-    // In ON_ERROR mode, wait until an error occurs to flash amber hint
     if (this.guideMode !== 'FULL' || !expectedChar) {
       return;
     }
@@ -268,7 +265,6 @@ export class KedmaneeKeyboard {
       this.flashTimers.set(eventCode, timer);
     }
 
-    // In ON_ERROR mode, briefly flash the correct target key (and Shift if needed) in amber
     if (!isCorrect && this.guideMode === 'ON_ERROR' && this.currentExpectedChar) {
       const mapping = KEDMANEE_CHAR_MAP.get(this.currentExpectedChar);
       if (mapping) {

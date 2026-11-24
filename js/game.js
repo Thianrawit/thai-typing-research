@@ -12,6 +12,7 @@ import {
 import { soundEngine } from './sound.js';
 import { getWordsForSession } from './words.js';
 import { KedmaneeKeyboard } from './keyboard.js';
+import { icon } from './icons.js';
 
 const PENDING_LOGS_KEY = 'thai_typing_pending_logs';
 const COMBINING_MARKS = new Set([
@@ -24,6 +25,48 @@ const IGNORED_KEYS = new Set([
   'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ContextMenu', 'NumLock',
   'ScrollLock', 'Pause', 'PrintScreen', 'Dead', 'Process', 'Unidentified',
 ]);
+
+// ============================================================================
+// Thai Grapheme Cluster Segmentation (Native OpenType Shaping Safe)
+// ============================================================================
+const thaiSegmenter =
+  typeof Intl !== 'undefined' && typeof Intl.Segmenter === 'function'
+    ? new Intl.Segmenter('th', { granularity: 'grapheme' })
+    : null;
+
+function segmentThaiClusters(word) {
+  let rawSegments = [];
+  if (thaiSegmenter) {
+    for (const seg of thaiSegmenter.segment(word)) {
+      rawSegments.push(seg.segment);
+    }
+  } else {
+    const matches = word.match(/[^\u0E31\u0E34-\u0E3A\u0E47-\u0E4E][\u0E31\u0E34-\u0E3A\u0E47-\u0E4E]*/g);
+    rawSegments = matches || Array.from(word);
+  }
+
+  // Ensure standalone SARA AM (U+0E33) stays inside its preceding consonant+tone cluster
+  // so OpenType ccmp/mark/mkmk renders words like "น้ำ" or "กำ" without mark collision
+  const merged = [];
+  for (const seg of rawSegments) {
+    if (seg === '\u0E33' && merged.length > 0) {
+      merged[merged.length - 1] += seg;
+    } else {
+      merged.push(seg);
+    }
+  }
+
+  const clusters = [];
+  let cursor = 0;
+  for (const text of merged) {
+    const chars = Array.from(text);
+    const startIdx = cursor;
+    const endIdx = cursor + chars.length - 1;
+    clusters.push({ text, chars, startIdx, endIdx });
+    cursor += chars.length;
+  }
+  return clusters;
+}
 
 // ============================================================================
 // DOM References
@@ -127,6 +170,7 @@ const state = {
   words: [],
   wordIndex: 0,
   currentChars: [],
+  currentClusters: [],
   charIndex: 0,
   hasErrorOnChar: false,
 
@@ -242,7 +286,7 @@ async function flushPendingLogsOnStartup() {
   }
 
   els.pinOfflineBanner.classList.remove('hidden');
-  els.pinOfflineText.textContent = `พบคะแนนค้างส่ง ${queue.length} รายการ กำลังส่งอัตโนมัติ...`;
+  els.pinOfflineText.innerHTML = `${icon('loader', 'w-4 h-4 animate-spin')}<span>พบคะแนนค้างส่ง ${queue.length} รายการ กำลังส่งอัตโนมัติ...</span>`;
   els.pinOfflineRetry.classList.add('hidden');
 
   let flushed = 0;
@@ -262,12 +306,12 @@ async function flushPendingLogsOnStartup() {
   if (remaining === 0) {
     els.pinOfflineBanner.classList.remove('bg-amber-50', 'border-amber-200', 'text-amber-800');
     els.pinOfflineBanner.classList.add('bg-emerald-50', 'border-emerald-200', 'text-emerald-800');
-    els.pinOfflineText.textContent = `✓ ส่งคะแนนค้างส่งสำเร็จครบ ${flushed} รายการแล้ว`;
+    els.pinOfflineText.innerHTML = `${icon('checkCircle', 'w-4 h-4')}<span>ส่งคะแนนค้างส่งสำเร็จครบ ${flushed} รายการแล้ว</span>`;
     setTimeout(() => els.pinOfflineBanner.classList.add('hidden'), 4500);
   } else {
     els.pinOfflineBanner.classList.remove('bg-emerald-50', 'border-emerald-200', 'text-emerald-800');
     els.pinOfflineBanner.classList.add('bg-amber-50', 'border-amber-200', 'text-amber-800');
-    els.pinOfflineText.textContent = `ยังมีคะแนนค้างส่งในเครื่อง ${remaining} รายการ (รอสัญญาณเน็ต/เปิดรอบ)`;
+    els.pinOfflineText.innerHTML = `${icon('alertTriangle', 'w-4 h-4')}<span>ยังมีคะแนนค้างส่งในเครื่อง ${remaining} รายการ (รอสัญญาณเน็ต/เปิดรอบ)</span>`;
     els.pinOfflineRetry.classList.remove('hidden');
   }
 }
@@ -315,7 +359,7 @@ function initDeviceTagUI() {
 }
 
 // ============================================================================
-// Screen 1 -> Screen 2: Verify PIN & Load Roster
+// Screen 1 -> Screen 2: Verify PIN & Load Full-Width Roster (Fix 4)
 // ============================================================================
 async function fetchSessionAndRoster(pin) {
   const { data, error } = await supabase.rpc('verify_session_and_get_roster', {
@@ -350,8 +394,8 @@ function renderRoster() {
   const durText = remSec === 0 ? `${mins} นาที` : `${mins} นาที ${remSec} วินาที`;
 
   els.rosterSessionBadge.textContent = `สัปดาห์ที่ ${session.week_no} • ${modeLabel}`;
-  els.rosterDurationLabel.textContent = `⏱️ ${durText}`;
-  els.rosterProgressLabel.textContent = `ส่งแล้ว ${completedTotal} / ${students.length} คน`;
+  els.rosterDurationLabel.innerHTML = `${icon('clock', 'w-3.5 h-3.5 text-slate-500')}<span>${escapeHtml(durText)}</span>`;
+  els.rosterProgressLabel.innerHTML = `${icon('checkCircle', 'w-3.5 h-3.5')}<span>ส่งแล้ว ${completedTotal} / ${students.length} คน</span>`;
   els.rosterStageTitle.textContent = stageMeta.title;
 
   const shift1 = students.filter((s) => (s.default_shift ?? (s.student_no <= 11 ? 1 : 2)) === 1);
@@ -362,7 +406,7 @@ function renderRoster() {
   els.shift1Count.textContent = `${s1Done}/${shift1.length} คน`;
   els.shift2Count.textContent = `${s2Done}/${shift2.length} คน`;
 
-  const renderGrid = (container, list) => {
+  const renderList = (container, list) => {
     container.innerHTML = '';
     for (const student of list) {
       const btn = document.createElement('button');
@@ -370,22 +414,22 @@ function renderRoster() {
 
       if (student.has_completed) {
         btn.disabled = true;
-        btn.className = 'w-full text-left p-3 rounded-xl border border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed flex items-center justify-between gap-2';
+        btn.className = 'w-full text-left py-2.5 px-3.5 rounded-xl border border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed flex items-center justify-between gap-3';
         btn.innerHTML = `
-          <div class="flex items-center gap-2.5 min-w-0">
+          <div class="flex items-center gap-3 flex-1 min-w-0">
             <span class="w-8 h-8 rounded-lg bg-slate-200 text-slate-500 font-bold text-sm flex items-center justify-center shrink-0">${escapeHtml(student.student_no)}</span>
-            <span class="font-semibold text-sm truncate line-through">${escapeHtml(student.full_name)}</span>
+            <span class="font-semibold text-sm md:text-base whitespace-normal break-words text-left leading-snug line-through">${escapeHtml(student.full_name)}</span>
           </div>
-          <span class="shrink-0 text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">✓ เล่นครบแล้ว</span>
+          <span class="shrink-0 inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700">${icon('check', 'w-3.5 h-3.5')}<span>เล่นครบแล้ว</span></span>
         `;
       } else {
-        btn.className = 'w-full text-left p-3 rounded-xl border-2 border-slate-200 bg-white hover:border-blue-500 hover:bg-blue-50/70 active:scale-[0.99] transition flex items-center justify-between gap-2 shadow-2xs';
+        btn.className = 'w-full text-left py-2.5 px-3.5 rounded-xl border-2 border-slate-200 bg-white hover:border-blue-500 hover:bg-blue-50/70 active:scale-[0.99] transition flex items-center justify-between gap-3 shadow-2xs';
         btn.innerHTML = `
-          <div class="flex items-center gap-2.5 min-w-0">
+          <div class="flex items-center gap-3 flex-1 min-w-0">
             <span class="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 font-extrabold text-sm flex items-center justify-center shrink-0">${escapeHtml(student.student_no)}</span>
-            <span class="font-bold text-slate-800 text-sm md:text-base truncate">${escapeHtml(student.full_name)}</span>
+            <span class="font-bold text-slate-800 text-sm md:text-base whitespace-normal break-words text-left leading-snug">${escapeHtml(student.full_name)}</span>
           </div>
-          <span class="shrink-0 text-blue-500 font-bold text-xs">เลือก →</span>
+          <span class="shrink-0 text-blue-500">${icon('chevronRight', 'w-5 h-5')}</span>
         `;
         btn.addEventListener('click', () => openConfirmStudentModal(student));
       }
@@ -394,8 +438,8 @@ function renderRoster() {
     }
   };
 
-  renderGrid(els.shift1Grid, shift1);
-  renderGrid(els.shift2Grid, shift2);
+  renderList(els.shift1Grid, shift1);
+  renderList(els.shift2Grid, shift2);
 }
 
 function openConfirmStudentModal(student) {
@@ -409,10 +453,9 @@ function openConfirmStudentModal(student) {
 }
 
 // ============================================================================
-// Screen 3: Gameplay Engine (Strict-Stop Unicode + Research Integrity Lock)
+// Screen 3: Gameplay Engine (Grapheme-Cluster Display + Strict-Stop Unicode)
 // ============================================================================
 function getEffectiveGuideMode(session) {
-  // Research Integrity Lock: Pretest and Posttest ALWAYS lock guides OFF
   if (session.mode === 'PRETEST' || session.mode === 'POSTTEST') {
     return 'NONE';
   }
@@ -422,8 +465,18 @@ function getEffectiveGuideMode(session) {
 
 function updateMuteButtonUI() {
   const muted = soundEngine.isMuted();
-  els.hudMuteBtn.textContent = muted ? '🔇' : '🔊';
+  els.hudMuteBtn.innerHTML = muted
+    ? icon('volumeX', 'w-5 h-5 text-slate-500')
+    : icon('volume2', 'w-5 h-5 text-slate-700');
   els.hudMuteBtn.title = muted ? 'เปิดเสียง' : 'ปิดเสียง';
+}
+
+function loadCurrentWord(word) {
+  const target = word || 'ก';
+  state.currentChars = Array.from(target);
+  state.currentClusters = segmentThaiClusters(target);
+  state.charIndex = 0;
+  state.hasErrorOnChar = false;
 }
 
 function startGameplay(student) {
@@ -440,7 +493,6 @@ function startGameplay(student) {
 
   state.keyboard.setGuideMode(guideMode);
 
-  // Reset metrics
   state.isPlaying = true;
   state.timerStarted = false;
   state.startedAtMs = 0;
@@ -449,9 +501,7 @@ function startGameplay(student) {
 
   state.words = getWordsForSession(session.stage_id, session.mode);
   state.wordIndex = 0;
-  state.currentChars = Array.from(state.words[0] || 'ก');
-  state.charIndex = 0;
-  state.hasErrorOnChar = false;
+  loadCurrentWord(state.words[0]);
 
   state.totalKeystrokes = 0;
   state.correctChars = 0;
@@ -472,16 +522,16 @@ function startGameplay(student) {
   els.hudTimer.parentElement.classList.add('bg-slate-900');
   els.hudWpm.textContent = '0';
   els.hudAcc.textContent = '100%';
-  els.hudCombo.textContent = '0 🔥';
+  els.hudCombo.innerHTML = `<span>0</span>${icon('flame', 'w-4 h-4 text-orange-500')}`;
   updateMuteButtonUI();
 
   // Guide mode badge
   els.langWarningBanner.classList.add('hidden');
   if (session.mode === 'PRETEST' || session.mode === 'POSTTEST') {
-    els.guideModeBadge.textContent = '🔒 โหมดทดสอบ: ปิดไฟนำทาง';
+    els.guideModeBadge.innerHTML = `${icon('lock', 'w-3.5 h-3.5')}<span>โหมดทดสอบ: ปิดไฟนำทาง</span>`;
     els.guideModeBadge.className = 'inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-700 border border-rose-200';
   } else if (guideMode === 'ON_ERROR') {
-    els.guideModeBadge.textContent = '💡 โหมดฝึกขั้นสูง: แสดงไฟนำทางเมื่อพิมพ์ผิด';
+    els.guideModeBadge.innerHTML = `${icon('lightbulb', 'w-3.5 h-3.5')}<span>โหมดฝึกขั้นสูง: แสดงไฟนำทางเมื่อพิมพ์ผิด</span>`;
     els.guideModeBadge.className = 'inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200';
   } else {
     els.guideModeBadge.className = 'hidden';
@@ -495,40 +545,50 @@ function startGameplay(student) {
 }
 
 function renderWordZone() {
-  const chars = state.currentChars;
-  const idx = state.charIndex;
+  const clusters = state.currentClusters;
+  const cursor = state.charIndex;
 
-  // Render shaping-safe per-character spans (inline only, zero breaking padding/letter-spacing)
-  const wordHtml = chars
-    .map((ch, i) => {
-      let cls = 'thai-char thai-char-pending';
-      if (i < idx) {
-        cls = 'thai-char thai-char-typed';
-      } else if (i === idx) {
-        cls = state.hasErrorOnChar ? 'thai-char thai-char-error' : 'thai-char thai-char-active';
+  // Each Thai grapheme cluster stays in ONE single contiguous <span> text node
+  // so OpenType ccmp/mark/mkmk positions stacked vowels & tone marks natively
+  let activeCluster = null;
+  const wordHtml = clusters
+    .map((cluster) => {
+      let cls = 'thai-cluster thai-cluster-pending';
+      if (cursor > cluster.endIdx) {
+        cls = 'thai-cluster thai-cluster-typed';
+      } else if (cursor >= cluster.startIdx && cursor <= cluster.endIdx) {
+        activeCluster = cluster;
+        cls = state.hasErrorOnChar
+          ? 'thai-cluster thai-cluster-error'
+          : 'thai-cluster thai-cluster-active';
       }
-      return `<span class="${cls}">${escapeHtml(ch)}</span>`;
+      return `<span class="${cls}">${escapeHtml(cluster.text)}</span>`;
     })
     .join('');
 
   els.currentWordDisplay.innerHTML = wordHtml;
 
-  // Compact character-sequence pill strip so students clearly distinguish vowel vs tone order
-  const stripHtml = chars
-    .map((ch, i) => {
-      const display = COMBINING_MARKS.has(ch) ? `◌${ch}` : ch;
-      let cls = 'bg-slate-100 text-slate-400 border-slate-200';
-      if (i < idx) {
-        cls = 'bg-emerald-50 text-emerald-700 border-emerald-200';
-      } else if (i === idx) {
+  // Combining-Mark Sequence Bar: shown ONLY when active cluster contains > 1 char
+  if (activeCluster && activeCluster.chars.length > 1) {
+    const pills = activeCluster.chars.map((ch, offset) => {
+      const charIdx = activeCluster.startIdx + offset;
+      const label = COMBINING_MARKS.has(ch) ? `◌${ch}` : ch;
+      let cls = 'bg-slate-100 text-slate-500 border-slate-200';
+      if (charIdx < cursor) {
+        cls = 'bg-emerald-50 text-emerald-700 border-emerald-300 font-bold';
+      } else if (charIdx === cursor) {
         cls = state.hasErrorOnChar
-          ? 'bg-rose-100 text-rose-700 border-rose-400 font-extrabold scale-105'
-          : 'bg-blue-100 text-blue-800 border-blue-400 font-extrabold scale-105';
+          ? 'bg-rose-100 text-rose-700 border-rose-400 font-extrabold scale-105 shadow-xs'
+          : 'bg-blue-600 text-white border-blue-700 font-extrabold scale-105 shadow-xs';
       }
-      return `<span class="inline-flex items-center justify-center min-w-[24px] h-6 px-1.5 rounded-md border text-xs transition-transform ${cls}">${escapeHtml(display)}</span>`;
-    })
-    .join('');
-  els.charStepStrip.innerHTML = stripHtml;
+      return `<span class="inline-flex items-center justify-center min-w-[28px] h-7 px-2 rounded-lg border text-sm leading-none transition-transform ${cls}">${escapeHtml(label)}</span>`;
+    });
+
+    const sep = icon('chevronRight', 'w-3.5 h-3.5 text-slate-300');
+    els.charStepStrip.innerHTML = `<span class="text-[11px] font-bold text-slate-400 mr-1">ลำดับกด:</span>${pills.join(sep)}`;
+  } else {
+    els.charStepStrip.innerHTML = '';
+  }
 
   // Next 2 preview words
   const next1 = state.words[(state.wordIndex + 1) % state.words.length] || '';
@@ -551,7 +611,7 @@ function updateLiveMetricsUI() {
 
   els.hudWpm.textContent = String(Math.round(netWpm));
   els.hudAcc.textContent = `${Math.round(acc)}%`;
-  els.hudCombo.textContent = `${state.currentCombo} 🔥`;
+  els.hudCombo.innerHTML = `<span>${state.currentCombo}</span>${icon('flame', 'w-4 h-4 text-orange-500')}`;
 }
 
 function startCountdownTimer() {
@@ -614,19 +674,15 @@ function advanceWord() {
   state.wordsCompleted += 1;
   state.wordIndex += 1;
   if (state.wordIndex >= state.words.length) {
-    // Re-cycle words cleanly if student finishes the full bank before time expires
     state.words = getWordsForSession(state.session.stage_id, state.session.mode);
     state.wordIndex = 0;
   }
-  state.currentChars = Array.from(state.words[state.wordIndex]);
-  state.charIndex = 0;
-  state.hasErrorOnChar = false;
+  loadCurrentWord(state.words[state.wordIndex]);
 }
 
 function handleGameKeydown(event) {
   if (state.currentScreen !== 'game' || !state.isPlaying) return;
 
-  // Allow browser/system shortcuts
   if (event.ctrlKey || event.altKey || event.metaKey) return;
   if (event.key.startsWith('F') && event.key.length > 1) return;
   if (IGNORED_KEYS.has(event.key)) {
@@ -635,7 +691,6 @@ function handleGameKeydown(event) {
   }
   if (event.key.length !== 1) return;
 
-  // Prevent browser quick-find or space scrolling during typing
   event.preventDefault();
 
   const expectedChar = state.currentChars[state.charIndex];
@@ -648,7 +703,6 @@ function handleGameKeydown(event) {
     return;
   }
 
-  // Hide language warning immediately once student switches back to Thai
   if (!els.langWarningBanner.classList.contains('hidden')) {
     clearTimeout(state.langBannerTimer);
     els.langWarningBanner.classList.add('hidden');
@@ -657,7 +711,6 @@ function handleGameKeydown(event) {
     }
   }
 
-  // Start countdown on first valid typing keystroke
   if (!state.timerStarted) {
     startCountdownTimer();
   }
@@ -684,7 +737,6 @@ function handleGameKeydown(event) {
     renderWordZone();
     state.keyboard.highlightTarget(state.currentChars[state.charIndex]);
   } else {
-    // Strict-stop: cursor does NOT advance on mistake
     state.errorKeystrokes += 1;
     state.currentCombo = 0;
     state.hasErrorOnChar = true;
@@ -706,6 +758,16 @@ function computeStars(netWpm, accuracyPct) {
   if (accuracyPct >= 92 && netWpm >= 18) return 3;
   if (accuracyPct >= 82 && netWpm >= 10) return 2;
   return 1;
+}
+
+function renderStarsSvg(count) {
+  let html = '';
+  for (let i = 1; i <= 3; i += 1) {
+    html += i <= count
+      ? icon('starFilled', 'w-12 h-12 text-amber-400 drop-shadow-xs')
+      : icon('star', 'w-12 h-12 text-slate-300');
+  }
+  return html;
 }
 
 function buildSubmissionPayload(actualDurationSec) {
@@ -742,20 +804,21 @@ function buildSubmissionPayload(actualDurationSec) {
   };
 }
 
-function setSaveStatusBanner(variant, text) {
+function setSaveStatusBanner(variant, iconName, text) {
   const variants = {
     loading: 'bg-blue-50 text-blue-700 border-blue-200',
     success: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     warning: 'bg-amber-50 text-amber-800 border-amber-300',
     error: 'bg-rose-50 text-rose-700 border-rose-200',
   };
+  const spin = variant === 'loading' ? ' animate-spin' : '';
   els.summarySaveStatus.className = `inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold border ${variants[variant] || variants.loading}`;
-  els.summarySaveStatus.textContent = text;
+  els.summarySaveStatus.innerHTML = `${icon(iconName, `w-4 h-4${spin}`)}<span>${escapeHtml(text)}</span>`;
 }
 
 async function submitWithRetries(payload, maxAttempts = 3) {
   els.summaryRetryBtn.classList.add('hidden');
-  setSaveStatusBanner('loading', '⏳ กำลังบันทึกคะแนนเข้าสู่ระบบ...');
+  setSaveStatusBanner('loading', 'loader', 'กำลังบันทึกคะแนนเข้าสู่ระบบ...');
 
   let lastResult = null;
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
@@ -766,9 +829,9 @@ async function submitWithRetries(payload, maxAttempts = 3) {
       if (result.ok) {
         removePendingLog(payload.p_log_id);
         if (result.permanentStatus === 'already_submitted') {
-          setSaveStatusBanner('warning', '⚠️ นักเรียนคนนี้ได้บันทึกคะแนนรอบนี้ไว้ก่อนหน้าแล้ว');
+          setSaveStatusBanner('warning', 'alertTriangle', 'นักเรียนคนนี้ได้บันทึกคะแนนรอบนี้ไว้ก่อนหน้าแล้ว');
         } else {
-          setSaveStatusBanner('success', '✓ บันทึกคะแนนสำเร็จ');
+          setSaveStatusBanner('success', 'checkCircle', 'บันทึกคะแนนสำเร็จ');
         }
         startAutoLogoutCountdown();
         return;
@@ -776,11 +839,11 @@ async function submitWithRetries(payload, maxAttempts = 3) {
 
       if (!result.retryable) {
         if (result.code === 'SESSION_CLOSED_OR_INVALID') {
-          setSaveStatusBanner('warning', '⚠️ รอบการเล่นถูกปิดแล้ว (เก็บคะแนนสำรองไว้ในเครื่องแล้ว — กดส่งใหม่ได้เมื่อครูเปิดรอบ)');
+          setSaveStatusBanner('warning', 'alertTriangle', 'รอบการเล่นถูกปิดแล้ว (เก็บคะแนนสำรองไว้ในเครื่องแล้ว — กดส่งใหม่ได้เมื่อครูเปิดรอบ)');
           els.summaryRetryBtn.classList.remove('hidden');
         } else {
           removePendingLog(payload.p_log_id);
-          setSaveStatusBanner('error', '❌ ไม่พบข้อมูลนักเรียนในระบบ กรุณาแจ้งคุณครู');
+          setSaveStatusBanner('error', 'xCircle', 'ไม่พบข้อมูลนักเรียนในระบบ กรุณาแจ้งคุณครู');
         }
         return;
       }
@@ -789,14 +852,13 @@ async function submitWithRetries(payload, maxAttempts = 3) {
     }
 
     if (attempt < maxAttempts) {
-      setSaveStatusBanner('loading', `⏳ สัญญาณขัดข้อง กำลังลองส่งใหม่ครั้งที่ ${attempt + 1}/${maxAttempts}...`);
+      setSaveStatusBanner('loading', 'loader', `สัญญาณขัดข้อง กำลังลองส่งใหม่ครั้งที่ ${attempt + 1}/${maxAttempts}...`);
       await new Promise((resolve) => setTimeout(resolve, attempt * 1500));
     }
   }
 
-  // Failed after 3 retries -> keep safely in localStorage & show manual Retry button
   if (!lastResult?.ok) {
-    setSaveStatusBanner('warning', '⚠️ อินเทอร์เน็ตขัดข้อง — สำรองคะแนนไว้ในเครื่องแล้ว กรุณากดปุ่มส่งอีกครั้ง');
+    setSaveStatusBanner('warning', 'alertTriangle', 'อินเทอร์เน็ตขัดข้อง — สำรองคะแนนไว้ในเครื่องแล้ว กรุณากดปุ่มส่งอีกครั้ง');
     els.summaryRetryBtn.classList.remove('hidden');
   }
 }
@@ -841,7 +903,6 @@ async function returnToRosterAndRefresh() {
     renderRoster();
     showScreen('roster');
   } catch (err) {
-    // Session was closed while student finished -> return to PIN screen cleanly
     state.session = null;
     state.students = [];
     state.selectedStudent = null;
@@ -867,25 +928,22 @@ function finishGameplay(actualDurationSec) {
   const payload = buildSubmissionPayload(actualDurationSec);
   state.lastPayload = payload;
 
-  // MANDATORY: Persist pending payload with fixed log_id BEFORE network call
   enqueuePendingLog(payload);
 
-  // Render summary metrics
   const starsCount = computeStars(payload.p_net_wpm, payload.p_accuracy_pct);
   const stageMeta = getStageMeta(state.session.stage_id);
   const modeLabel = MODE_LABELS[state.session.mode] || state.session.mode;
 
-  els.summaryStars.textContent = '⭐'.repeat(starsCount) + '☆'.repeat(3 - starsCount);
+  els.summaryStars.innerHTML = renderStarsSvg(starsCount);
   els.summaryStudentLabel.textContent = `เลขที่ ${state.selectedStudent.student_no} — ${state.selectedStudent.full_name}`;
   els.summaryStageLabel.textContent = `สัปดาห์ที่ ${state.session.week_no} • ${modeLabel} • ${stageMeta.title}`;
   els.summaryNetWpm.textContent = formatNumber(payload.p_net_wpm, 2);
   els.summaryGrossWpm.textContent = formatNumber(payload.p_gross_wpm, 2);
   els.summaryAcc.textContent = `${formatNumber(payload.p_accuracy_pct, 2)}%`;
   els.summaryWords.textContent = `${payload.p_words_completed} คำ`;
-  els.summaryCombo.textContent = `${payload.p_max_combo} 🔥`;
+  els.summaryCombo.innerHTML = `<span>${payload.p_max_combo}</span>${icon('flame', 'w-6 h-6 text-orange-500')}`;
   els.summaryWarnings.textContent = `${payload.p_eng_lang_warnings} ครั้ง`;
 
-  // Pause auto-logout UI until submission resolves
   stopAutoLogoutCountdown();
   els.logoutCountdownSec.textContent = '15';
   els.logoutProgressBar.style.transition = 'none';
@@ -899,7 +957,6 @@ function finishGameplay(actualDurationSec) {
 // Event Listeners & Initialization
 // ============================================================================
 function bindEvents() {
-  // Numeric-only 4-digit PIN input
   els.pinInput.addEventListener('input', () => {
     els.pinInput.value = els.pinInput.value.replace(/\D/g, '').slice(0, 4);
     els.pinError.classList.add('hidden');
@@ -916,7 +973,7 @@ function bindEvents() {
     }
 
     els.pinSubmitBtn.disabled = true;
-    els.pinSubmitBtn.textContent = 'กำลังตรวจสอบ PIN...';
+    els.pinSubmitBtn.innerHTML = `${icon('loader', 'w-5 h-5 animate-spin')}<span>กำลังตรวจสอบ PIN...</span>`;
     els.pinError.classList.add('hidden');
 
     try {
@@ -932,7 +989,7 @@ function bindEvents() {
       els.pinInput.select();
     } finally {
       els.pinSubmitBtn.disabled = false;
-      els.pinSubmitBtn.textContent = 'เข้าสู่ห้องเรียน →';
+      els.pinSubmitBtn.innerHTML = `<span>เข้าสู่ห้องเรียน</span>${icon('chevronRight', 'w-5 h-5')}`;
     }
   });
 
@@ -940,10 +997,9 @@ function bindEvents() {
     flushPendingLogsOnStartup();
   });
 
-  // Roster controls
   els.rosterRefreshBtn.addEventListener('click', async () => {
     els.rosterRefreshBtn.disabled = true;
-    els.rosterRefreshBtn.textContent = 'กำลังโหลด...';
+    els.rosterRefreshBtn.innerHTML = `${icon('loader', 'w-4 h-4 animate-spin')}<span>กำลังโหลด...</span>`;
     try {
       const data = await fetchSessionAndRoster(state.pin);
       state.session = data.session;
@@ -955,7 +1011,7 @@ function bindEvents() {
       showScreen('pin');
     } finally {
       els.rosterRefreshBtn.disabled = false;
-      els.rosterRefreshBtn.textContent = '🔄 รีเฟรชรายชื่อ';
+      els.rosterRefreshBtn.innerHTML = `${icon('refreshCw', 'w-4 h-4')}<span>รีเฟรชรายชื่อ</span>`;
     }
   });
 
@@ -968,7 +1024,6 @@ function bindEvents() {
     els.pinInput.focus();
   });
 
-  // Confirm student modal
   els.confirmCancelBtn.addEventListener('click', () => {
     state.pendingStudent = null;
     els.confirmModal.classList.add('hidden');
@@ -986,7 +1041,6 @@ function bindEvents() {
     startGameplay(state.pendingStudent);
   });
 
-  // Gameplay controls
   els.hudMuteBtn.addEventListener('click', () => {
     soundEngine.toggleMute();
     updateMuteButtonUI();
@@ -995,7 +1049,6 @@ function bindEvents() {
 
   window.addEventListener('keydown', handleGameKeydown);
 
-  // Summary controls
   els.summaryRetryBtn.addEventListener('click', () => {
     if (state.lastPayload) {
       submitWithRetries(state.lastPayload, 3);
@@ -1006,7 +1059,6 @@ function bindEvents() {
     returnToRosterAndRefresh();
   });
 
-  // Auto-flush pending logs whenever network comes back online
   window.addEventListener('online', () => {
     if (state.currentScreen === 'pin') {
       flushPendingLogsOnStartup();
