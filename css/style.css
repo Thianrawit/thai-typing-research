@@ -1,0 +1,379 @@
+/* ==========================================================================
+   Grade 6 Thai Typing Research Web App — Custom Styles
+   Optimized for Sarabun Thai Typography & 60 FPS on Low-Spec School PCs
+   ========================================================================== */
+
+:root {
+  --font-thai: 'Sarabun', 'Noto Sans Thai', system-ui, -apple-system, sans-serif;
+  --key-bg: #ffffff;
+  --key-border: #cbd5e1;
+  --key-shadow: #94a3b8;
+  --key-target-bg: #2563eb;
+  --key-target-border: #1d4ed8;
+  --key-shift-bg: #f59e0b;
+  --key-shift-border: #d97706;
+  --key-amber-bg: #fef3c7;
+  --key-amber-border: #f59e0b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  font-family: var(--font-thai);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Prevent Thai above/below vowels & tone marks from clipping */
+.thai-word-display {
+  font-family: var(--font-thai);
+  line-height: 1.65 !important;
+  padding-top: 0.25em;
+  padding-bottom: 0.25em;
+  letter-spacing: 0 !important;
+  font-variant-ligatures: normal;
+  text-rendering: optimizeLegibility;
+}
+
+/* Keep combining marks visually attached cleanly inside inline spans */
+.thai-char {
+  display: inline;
+  transition: color 75ms ease-out;
+}
+
+.thai-char-typed {
+  color: #059669;
+}
+
+.thai-char-active {
+  color: #1d4ed8;
+  background-color: rgba(191, 219, 254, 0.72);
+  border-radius: 6px;
+}
+
+.thai-char-error {
+  color: #dc2626;
+  background-color: rgba(254, 202, 202, 0.9);
+  border-radius: 6px;
+}
+
+.thai-char-pending {
+  color: #1e293b;
+}
+
+/* Crisp hardware-accelerated shake animation on wrong key */
+@keyframes wordShake {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  20% { transform: translate3d(-7px, 0, 0); }
+  40% { transform: translate3d(7px, 0, 0); }
+  60% { transform: translate3d(-5px, 0, 0); }
+  80% { transform: translate3d(4px, 0, 0); }
+}
+
+.animate-word-shake {
+  animation: wordShake 240ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes langPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.015); }
+}
+
+.animate-lang-banner {
+  animation: langPulse 380ms ease-in-out 2;
+}
+
+/* ==========================================================================
+   Interactive Thai Kedmanee Virtual Keyboard
+   ========================================================================== */
+
+.kb-shell {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  background: #e2e8f0;
+  border: 1px solid #cbd5e1;
+  border-radius: 16px;
+  padding: 10px 12px 12px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 4px 12px rgba(15, 23, 42, 0.06);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.kb-row {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 5px;
+  width: 100%;
+}
+
+.kb-row:last-child {
+  margin-bottom: 0;
+}
+
+.kb-key {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex: 1 1 0;
+  min-width: 0;
+  height: 46px;
+  padding: 3px 6px 4px;
+  background: var(--key-bg);
+  border: 1.5px solid var(--key-border);
+  border-bottom-width: 3px;
+  border-bottom-color: var(--key-shadow);
+  border-radius: 8px;
+  color: #1e293b;
+  transition: transform 70ms ease, background-color 90ms ease, border-color 90ms ease, color 90ms ease;
+  will-change: transform, background-color;
+}
+
+@media (min-height: 820px) {
+  .kb-key {
+    height: 54px;
+    padding: 4px 7px 5px;
+  }
+}
+
+@media (max-height: 700px) {
+  .kb-key {
+    height: 40px;
+    padding: 2px 5px;
+  }
+}
+
+/* Subtle home-row styling & tactile bump indicators (F = ด, J = ่) */
+.kb-key-home {
+  background: #f8fafc;
+  border-color: #93c5fd;
+  border-bottom-color: #60a5fa;
+}
+
+.kb-key-bump::after {
+  content: '';
+  position: absolute;
+  bottom: 3px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 14px;
+  height: 2.5px;
+  border-radius: 99px;
+  background: #3b82f6;
+  opacity: 0.7;
+}
+
+.kb-key-modifier {
+  background: #f1f5f9;
+  color: #475569;
+  justify-content: center;
+  align-items: center;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.kb-key-space {
+  justify-content: center;
+  align-items: center;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #64748b;
+  height: 38px;
+}
+
+@media (min-height: 820px) {
+  .kb-key-space {
+    height: 44px;
+  }
+}
+
+/* Normal & Shifted glyphs inside each key */
+.kb-glyph-shift {
+  align-self: flex-end;
+  font-size: 0.74rem;
+  line-height: 1.1;
+  font-weight: 600;
+  color: #64748b;
+  transition: color 90ms ease, transform 90ms ease, opacity 90ms ease;
+}
+
+.kb-glyph-normal {
+  align-self: flex-start;
+  font-size: 1.12rem;
+  line-height: 1.05;
+  font-weight: 700;
+  color: #0f172a;
+  transition: color 90ms ease, transform 90ms ease, opacity 90ms ease;
+}
+
+@media (min-height: 820px) {
+  .kb-glyph-shift {
+    font-size: 0.82rem;
+  }
+  .kb-glyph-normal {
+    font-size: 1.28rem;
+  }
+}
+
+.kb-lang-badge {
+  position: absolute;
+  bottom: 2px;
+  right: 4px;
+  font-size: 0.56rem;
+  line-height: 1;
+  font-weight: 700;
+  color: #0284c7;
+  background: #e0f2fe;
+  padding: 1px 3px;
+  border-radius: 4px;
+}
+
+.kb-shift-hold-badge {
+  display: none;
+  margin-left: 6px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #b45309;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+
+/* When Shift is required for the current target character, emphasize the shifted layer */
+.kb-shell.shift-layer-active .kb-glyph-normal {
+  opacity: 0.34;
+  transform: scale(0.86);
+}
+
+.kb-shell.shift-layer-active .kb-glyph-shift {
+  color: #0f172a;
+  font-weight: 700;
+  transform: scale(1.25);
+  transform-origin: top right;
+}
+
+/* Target key highlight (FULL guide mode) */
+.kb-key.key-target {
+  background: var(--key-target-bg) !important;
+  border-color: var(--key-target-border) !important;
+  border-bottom-color: #1e3a8a !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.38);
+  z-index: 2;
+}
+
+.kb-key.key-target .kb-glyph-normal,
+.kb-key.key-target .kb-glyph-shift {
+  color: #ffffff !important;
+}
+
+.kb-key.key-target.kb-key-bump::after {
+  background: #ffffff;
+}
+
+.kb-shell:not(.shift-layer-active) .kb-key.key-target .kb-glyph-shift {
+  opacity: 0.45;
+}
+
+.kb-shell.shift-layer-active .kb-key.key-target .kb-glyph-normal {
+  opacity: 0.38;
+}
+
+.kb-shell.shift-layer-active .kb-key.key-target .kb-glyph-shift {
+  opacity: 1;
+  color: #fef08a !important;
+}
+
+/* Shift target highlight */
+.kb-key.key-shift-target {
+  background: var(--key-shift-bg) !important;
+  border-color: var(--key-shift-border) !important;
+  border-bottom-color: #b45309 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.35);
+  z-index: 2;
+}
+
+.kb-key.key-shift-target .kb-shift-hold-badge {
+  display: inline-block;
+}
+
+/* ON_ERROR mode amber hint */
+.kb-key.key-hint-amber {
+  background: #f59e0b !important;
+  border-color: #d97706 !important;
+  border-bottom-color: #b45309 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.42);
+  z-index: 3;
+}
+
+.kb-key.key-hint-amber .kb-glyph-normal,
+.kb-key.key-hint-amber .kb-glyph-shift {
+  color: #ffffff !important;
+}
+
+.kb-key.key-hint-amber .kb-shift-hold-badge {
+  display: inline-block;
+}
+
+/* Physical keypress animations */
+.kb-key.key-press-correct {
+  transform: translateY(2px);
+  background: #10b981 !important;
+  border-color: #059669 !important;
+  border-bottom-width: 1.5px;
+  color: #ffffff !important;
+}
+
+.kb-key.key-press-correct .kb-glyph-normal,
+.kb-key.key-press-correct .kb-glyph-shift {
+  color: #ffffff !important;
+}
+
+.kb-key.key-press-error {
+  transform: translateY(2px);
+  background: #ef4444 !important;
+  border-color: #dc2626 !important;
+  border-bottom-width: 1.5px;
+  color: #ffffff !important;
+}
+
+.kb-key.key-press-error .kb-glyph-normal,
+.kb-key.key-press-error .kb-glyph-shift {
+  color: #ffffff !important;
+}
+
+/* Sortable table cursor & scrollbar polish */
+.sortable-th {
+  cursor: pointer;
+  user-select: none;
+}
+
+.sortable-th:hover {
+  background-color: #f1f5f9;
+}
+
+/* Custom subtle scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

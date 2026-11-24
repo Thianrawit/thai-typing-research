@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ระบบควบคุมห้องเรียน (ครูผู้สอน) — Thai Typing Research</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Sarabun', 'Noto Sans Thai', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen antialiased">
+
+  <!-- ======================================================================
+       AUTH VIEW (TEACHER LOGIN)
+       ====================================================================== -->
+  <section id="admin-auth-view" class="min-h-screen flex flex-col justify-center items-center p-4 bg-gradient-to-br from-slate-100 via-white to-blue-50">
+    <div class="w-full max-w-md bg-white rounded-3xl shadow-xl border border-slate-200/80 p-7 md:p-8 space-y-6">
+      <div class="text-center">
+        <div class="w-14 h-14 mx-auto rounded-2xl bg-slate-900 text-white flex items-center justify-center text-2xl shadow-lg mb-3">
+          👩‍🏫
+        </div>
+        <h1 class="text-2xl font-extrabold text-slate-900">เข้าสู่ระบบครูผู้สอน</h1>
+        <p class="text-sm text-slate-500 mt-1">จัดการรอบฝึกพิมพ์ดีดไทย ป.6 และติดตามผลแบบเรียลไทม์</p>
+      </div>
+
+      <form id="admin-login-form" class="space-y-4">
+        <div>
+          <label for="admin-email" class="block text-sm font-bold text-slate-700 mb-1">อีเมลครูผู้สอน</label>
+          <input id="admin-email" type="email" required autocomplete="username" placeholder="teacher@school.ac.th" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none text-sm" />
+        </div>
+        <div>
+          <label for="admin-password" class="block text-sm font-bold text-slate-700 mb-1">รหัสผ่าน</label>
+          <input id="admin-password" type="password" required autocomplete="current-password" placeholder="••••••••" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none text-sm" />
+        </div>
+        <div id="admin-login-error" class="hidden text-sm font-semibold text-rose-600 bg-rose-50 border border-rose-200 rounded-xl px-3.5 py-2"></div>
+        <button id="admin-login-btn" type="submit" class="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-lg shadow-blue-600/20 transition disabled:opacity-50">
+          เข้าสู่ระบบ
+        </button>
+      </form>
+
+      <div class="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-500">
+        <a href="./index.html" class="hover:text-blue-600">← กลับหน้าเด็กนักเรียน</a>
+        <a href="./dashboard.html" class="hover:text-blue-600">แดชบอร์ดวิจัย →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================================
+       MAIN ADMIN CONTROL PANEL
+       ====================================================================== -->
+  <div id="admin-main-view" class="hidden min-h-screen flex flex-col">
+    <!-- Top Navbar -->
+    <header class="sticky top-0 z-30 bg-white border-b border-slate-200 shadow-xs">
+      <div class="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3 min-w-0">
+          <span class="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-extrabold shrink-0">⌨️</span>
+          <div class="min-w-0">
+            <h1 class="font-extrabold text-slate-900 text-base md:text-lg truncate">ควบคุมห้องเรียนพิมพ์ดีดไทย ป.6</h1>
+            <p id="admin-user-email" class="text-xs text-slate-500 truncate"></p>
+          </div>
+        </div>
+
+        <nav class="flex items-center gap-2">
+          <a href="./index.html" target="_blank" class="hidden sm:inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">
+            🖥️ หน้านักเรียน
+          </a>
+          <a href="./dashboard.html" class="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition">
+            📊 แดชบอร์ดวิจัย
+          </a>
+          <button id="admin-logout-btn" type="button" class="px-3 py-1.5 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 transition">
+            ออกจากระบบ
+          </button>
+        </nav>
+      </div>
+
+      <!-- Tab Bar -->
+      <div class="max-w-7xl mx-auto px-4 md:px-6 flex gap-1 border-t border-slate-100">
+        <button id="tab-btn-sessions" type="button" class="px-4 py-2.5 text-sm font-bold border-b-2 border-blue-600 text-blue-700 transition">
+          🎯 ควบคุมรอบการเล่น &amp; ติดตามผลสด
+        </button>
+        <button id="tab-btn-students" type="button" class="px-4 py-2.5 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition">
+          👥 จัดการรายชื่อนักเรียน (22 คน)
+        </button>
+      </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 md:px-6 py-6 space-y-6">
+
+      <!-- ==================================================================
+           TAB 1: SESSION CONTROL & LIVE MONITOR
+           ================================================================== -->
+      <div id="tab-sessions" class="space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+          <!-- Active Session Hero Card (Left 7 cols) -->
+          <div class="lg:col-span-7 space-y-4">
+            <div id="active-session-hero" class="hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white rounded-3xl p-6 md:p-7 shadow-xl shadow-blue-900/15">
+              <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-400/20 text-emerald-100 border border-emerald-300/30">
+                    <span class="w-2 h-2 rounded-full bg-emerald-300 animate-pulse"></span>
+                    กำลังเปิดรับการส่งคะแนน
+                  </span>
+                  <h2 id="hero-stage-title" class="text-xl md:text-2xl font-extrabold mt-2">ด่านที่ 1: แป้นเหย้า</h2>
+                  <p id="hero-session-meta" class="text-sm text-blue-100 mt-1"></p>
+                  <p id="hero-session-id" class="text-xs text-blue-200/80 font-mono mt-0.5"></p>
+                </div>
+                <button id="btn-close-active-session" type="button" class="px-4 py-2.5 rounded-2xl bg-rose-500 hover:bg-rose-600 text-white font-extrabold text-sm shadow-lg transition">
+                  ⛔ ปิดรอบการเล่น (Close Session)
+                </button>
+              </div>
+
+              <div class="mt-6 bg-white/10 backdrop-blur-xs rounded-2xl p-5 border border-white/15 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div>
+                  <div class="text-xs font-bold uppercase tracking-widest text-blue-200">รหัส PIN สำหรับนักเรียน (แสดงขึ้นกระดาน)</div>
+                  <div id="hero-pin" class="text-7xl md:text-8xl font-extrabold tracking-[0.22em] font-mono leading-none mt-2 select-all">0000</div>
+                </div>
+                <button id="btn-copy-pin" type="button" class="px-4 py-2.5 rounded-xl bg-white text-blue-700 hover:bg-blue-50 font-bold text-sm shadow transition shrink-0">
+                  📋 คัดลอก PIN
+                </button>
+              </div>
+            </div>
+
+            <div id="no-active-session" class="bg-white rounded-3xl border-2 border-dashed border-slate-300 p-8 text-center space-y-2">
+              <div class="text-4xl">🔒</div>
+              <h2 class="text-lg font-extrabold text-slate-700">ยังไม่มีรอบการเล่นที่เปิดอยู่ในขณะนี้</h2>
+              <p class="text-sm text-slate-500">สร้างรอบการเล่นใหม่ทางด้านขวา หรือเปิดรอบเดิมจากตารางด้านล่าง</p>
+            </div>
+          </div>
+
+          <!-- Create/Open Session Form (Right 5 cols) -->
+          <div class="lg:col-span-5 bg-white rounded-3xl border border-slate-200 shadow-sm p-5 md:p-6">
+            <h2 class="text-lg font-extrabold text-slate-900 mb-4">➕ เปิดรอบการเล่นใหม่</h2>
+            <form id="create-session-form" class="space-y-3.5">
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label for="input-week-no" class="block text-xs font-bold text-slate-600 mb-1">สัปดาห์ที่ (0–15)</label>
+                  <input id="input-week-no" type="number" min="0" max="15" value="1" required class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-bold focus:border-blue-500 outline-none" />
+                </div>
+                <div>
+                  <label for="input-mode" class="block text-xs font-bold text-slate-600 mb-1">โหมดการเล่น</label>
+                  <select id="input-mode" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-bold focus:border-blue-500 outline-none bg-white">
+                    <option value="PRETEST">PRETEST (ทดสอบก่อนเรียน)</option>
+                    <option value="PRACTICE" selected>PRACTICE (ฝึกทักษะ)</option>
+                    <option value="POSTTEST">POSTTEST (ทดสอบหลังเรียน)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label for="input-stage-id" class="block text-xs font-bold text-slate-600 mb-1">ชุดคำศัพท์ / ด่านฝึก</label>
+                <select id="input-stage-id" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-semibold focus:border-blue-500 outline-none bg-white"></select>
+              </div>
+
+              <div>
+                <label for="input-duration-sec" class="block text-xs font-bold text-slate-600 mb-1">ระยะเวลา (วินาที: 30–1800)</label>
+                <div class="flex flex-wrap gap-1.5 mb-2">
+                  <button type="button" data-sec="180" class="duration-preset-btn px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 hover:bg-blue-100 hover:text-blue-700 text-slate-700 transition">180s (3 นาที)</button>
+                  <button type="button" data-sec="300" class="duration-preset-btn px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-600 text-white transition">300s (5 นาที)</button>
+                  <button type="button" data-sec="360" class="duration-preset-btn px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 hover:bg-blue-100 hover:text-blue-700 text-slate-700 transition">360s (6 นาที)</button>
+                  <button type="button" data-sec="420" class="duration-preset-btn px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 hover:bg-blue-100 hover:text-blue-700 text-slate-700 transition">420s (7 นาที)</button>
+                </div>
+                <input id="input-duration-sec" type="number" min="30" max="1800" value="300" required class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-bold focus:border-blue-500 outline-none" />
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label for="input-pin" class="block text-xs font-bold text-slate-600 mb-1">รหัส PIN 4 หลัก</label>
+                  <div class="flex gap-1.5">
+                    <input id="input-pin" type="text" maxlength="4" pattern="[0-9]{4}" required class="w-full px-3 py-2 rounded-xl border border-slate-300 text-base font-extrabold font-mono tracking-widest text-center focus:border-blue-500 outline-none" />
+                    <button id="btn-reroll-pin" type="button" title="สุ่ม PIN ใหม่" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition">🎲</button>
+                  </div>
+                </div>
+                <div>
+                  <label for="input-session-id" class="block text-xs font-bold text-slate-600 mb-1">รหัสรอบ (Auto ID)</label>
+                  <input id="input-session-id" type="text" readonly class="w-full px-2.5 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs font-mono text-slate-600" />
+                </div>
+              </div>
+
+              <label class="flex items-center gap-2 text-xs font-semibold text-slate-600 cursor-pointer pt-1">
+                <input id="input-close-others" type="checkbox" checked class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500" />
+                ปิดรอบที่เปิดค้างอยู่ก่อนหน้าโดยอัตโนมัติ (แนะนำ)
+              </label>
+
+              <div id="create-session-feedback" class="hidden text-xs font-bold rounded-xl px-3 py-2"></div>
+
+              <button id="btn-create-session" type="submit" class="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-sm shadow-md shadow-blue-600/20 transition disabled:opacity-50">
+                🚀 เปิดรอบการเล่นทันที
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Live Monitor (22 Students Split by Shift) -->
+        <section class="bg-white rounded-3xl border border-slate-200 shadow-sm p-5 md:p-6 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="text-lg font-extrabold text-slate-900">📡 ติดตามการส่งคะแนนแบบสด (22 คน)</h2>
+                <span id="monitor-count-text" class="px-3 py-0.5 rounded-full text-xs font-extrabold bg-emerald-100 text-emerald-800">ส่งแล้ว 0 / 22 คน</span>
+              </div>
+              <p id="monitor-session-label" class="text-xs text-slate-500 mt-0.5">ยังไม่ได้เลือกรอบการเล่น</p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-3">
+              <label class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 cursor-pointer">
+                <input id="monitor-auto-refresh" type="checkbox" checked class="w-4 h-4 rounded text-blue-600" />
+                รีเฟรชอัตโนมัติ (5 วิ)
+              </label>
+              <button id="btn-refresh-monitor" type="button" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition">
+                🔄 รีเฟรชตอนนี้
+              </button>
+              <span id="monitor-last-updated" class="text-[11px] text-slate-400"></span>
+            </div>
+          </div>
+
+          <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+            <div id="monitor-progress-bar" class="h-full bg-emerald-500 rounded-full transition-all duration-300" style="width: 0%"></div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <div>
+              <div class="flex items-center justify-between mb-2.5">
+                <h3 class="font-extrabold text-slate-800 text-sm">ผลัดที่ 1 (เลขที่ 1–11)</h3>
+                <span id="monitor-shift1-count" class="text-xs font-bold text-sky-700 bg-sky-50 px-2.5 py-0.5 rounded-full">0/11</span>
+              </div>
+              <div id="monitor-shift1-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"></div>
+            </div>
+            <div>
+              <div class="flex items-center justify-between mb-2.5">
+                <h3 class="font-extrabold text-slate-800 text-sm">ผลัดที่ 2 (เลขที่ 12–22)</h3>
+                <span id="monitor-shift2-count" class="text-xs font-bold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full">0/11</span>
+              </div>
+              <div id="monitor-shift2-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Past Sessions Table -->
+        <section class="bg-white rounded-3xl border border-slate-200 shadow-sm p-5 md:p-6 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <h2 class="text-lg font-extrabold text-slate-900">🗂️ ประวัติรอบการเล่นทั้งหมด</h2>
+            <select id="filter-past-mode" class="px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-bold bg-white outline-none">
+              <option value="ALL">ทุกโหมด</option>
+              <option value="PRETEST">PRETEST</option>
+              <option value="PRACTICE">PRACTICE</option>
+              <option value="POSTTEST">POSTTEST</option>
+            </select>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left border-collapse">
+              <thead>
+                <tr class="border-b border-slate-200 text-xs uppercase text-slate-500 bg-slate-50">
+                  <th class="py-2.5 px-3 font-bold">สัปดาห์</th>
+                  <th class="py-2.5 px-3 font-bold">วันที่</th>
+                  <th class="py-2.5 px-3 font-bold">โหมด</th>
+                  <th class="py-2.5 px-3 font-bold">ชุดฝึก / ด่าน</th>
+                  <th class="py-2.5 px-3 font-bold">PIN</th>
+                  <th class="py-2.5 px-3 font-bold">เวลา</th>
+                  <th class="py-2.5 px-3 font-bold">สถานะ</th>
+                  <th class="py-2.5 px-3 font-bold text-right">จัดการ</th>
+                </tr>
+              </thead>
+              <tbody id="past-sessions-tbody" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <!-- ==================================================================
+           TAB 2: STUDENT ROSTER MANAGER (22 STUDENTS)
+           ================================================================== -->
+      <div id="tab-students" class="hidden space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <!-- Editable Table (Left 8 cols) -->
+          <div class="lg:col-span-8 bg-white rounded-3xl border border-slate-200 shadow-sm p-5 md:p-6 space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 class="text-lg font-extrabold text-slate-900">รายชื่อนักเรียนชั้น ป.6 (22 คน)</h2>
+                <p class="text-xs text-slate-500">แก้ไขชื่อ-นามสกุล ผลัดเริ่มต้น และสิทธิ์คัดกรองนักเรียน IEP สำหรับงานวิจัย</p>
+              </div>
+              <button id="btn-save-all-students" type="button" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow transition">
+                💾 บันทึกทั้งหมด (Save All)
+              </button>
+            </div>
+
+            <div id="students-save-feedback" class="hidden text-xs font-bold px-3.5 py-2 rounded-xl"></div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm text-left border-collapse">
+                <thead>
+                  <tr class="border-b border-slate-200 bg-slate-50 text-xs text-slate-500">
+                    <th class="py-2.5 px-2.5 font-bold">เลขที่</th>
+                    <th class="py-2.5 px-2.5 font-bold">รหัส</th>
+                    <th class="py-2.5 px-2.5 font-bold">ชื่อ-นามสกุล</th>
+                    <th class="py-2.5 px-2.5 font-bold">ผลัด</th>
+                    <th class="py-2.5 px-2.5 font-bold text-center">IEP (ไม่รวมวิจัย)</th>
+                    <th class="py-2.5 px-2.5 font-bold text-right">บันทึก</th>
+                  </tr>
+                </thead>
+                <tbody id="students-tbody" class="divide-y divide-slate-100"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Bulk Paste Helper (Right 4 cols) -->
+          <div class="lg:col-span-4 bg-white rounded-3xl border border-slate-200 shadow-sm p-5 md:p-6 space-y-3">
+            <h2 class="text-base font-extrabold text-slate-900">📋 วางรายชื่อแบบกลุ่ม (Bulk Paste)</h2>
+            <p class="text-xs text-slate-500 leading-relaxed">
+              คัดลอกรายชื่อนักเรียน 22 บรรทัดจาก Excel หรือ Word มาวางด้านล่าง ระบบจะเรียงใส่เลขที่ 1–22 ให้อัตโนมัติ (รองรับทั้งแบบมีเลขที่นำหน้าและเฉพาะชื่อ)
+            </p>
+            <textarea
+              id="bulk-paste-textarea"
+              rows="12"
+              placeholder="ด.ช.สมชาย ใจดี&#10;ด.ญ.สมหญิง รักเรียน&#10;..."
+              class="w-full p-3 rounded-xl border border-slate-300 text-xs leading-relaxed focus:border-blue-500 outline-none font-sans"
+            ></textarea>
+            <div id="bulk-paste-status" class="hidden text-xs font-bold px-3 py-2 rounded-xl"></div>
+            <div class="grid grid-cols-2 gap-2">
+              <button id="btn-bulk-preview" type="button" class="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition">
+                เติมลงตารางก่อน
+              </button>
+              <button id="btn-bulk-apply" type="button" class="py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow transition">
+                อัปเดตทันที 22 คน
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ======================================================================
+       MODAL: CONFIRM DELETE LOG FOR RE-TEST
+       ====================================================================== -->
+  <div id="delete-log-modal" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 space-y-4">
+      <h3 class="text-lg font-extrabold text-rose-700">⚠️ ยืนยันการลบคะแนนเพื่อสอบใหม่</h3>
+      <p id="delete-log-desc" class="text-sm text-slate-600 leading-relaxed"></p>
+      <div class="flex justify-end gap-2 pt-2">
+        <button id="btn-cancel-delete-log" type="button" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 font-bold text-sm hover:bg-slate-100 transition">
+          ยกเลิก
+        </button>
+        <button id="btn-confirm-delete-log" type="button" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm transition">
+          ลบคะแนนนี้
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./js/admin.js"></script>
+</body>
+</html>

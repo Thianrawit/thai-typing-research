@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ฝึกพิมพ์ดีดไทย ป.6 — Thai Typing Research</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Sarabun', 'Noto Sans Thai', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen antialiased selection:bg-blue-200">
+
+  <!-- ======================================================================
+       SCREEN 1: PIN ENTRY
+       ====================================================================== -->
+  <section id="screen-pin" class="min-h-screen flex flex-col justify-between p-4 md:p-6 bg-gradient-to-br from-sky-50 via-white to-indigo-50">
+    <div class="flex justify-end">
+      <a href="./admin.html" title="สำหรับคุณครู (Admin)" class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-blue-600 px-3 py-1.5 rounded-full hover:bg-white/80 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+        หน้าคุณครู
+      </a>
+    </div>
+
+    <div class="w-full max-w-md mx-auto">
+      <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/70 border border-slate-100 p-7 md:p-9 text-center">
+        <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/30">
+          <svg class="w-9 h-9" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="3"/><path stroke-linecap="round" d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 13h.01M10 13h.01M14 13h.01M18 13h.01M8 16h8"/></svg>
+        </div>
+        <h1 class="text-2xl md:text-3xl font-extrabold text-slate-900">ฝึกพิมพ์สัมผัสภาษาไทย ป.6</h1>
+        <p class="text-slate-500 mt-1.5 text-base">กรอกรหัส PIN 4 หลักจากหน้าจอกระดานของคุณครู</p>
+
+        <!-- Offline Pending Logs Flush Indicator -->
+        <div id="pin-offline-banner" class="hidden mt-4 px-3.5 py-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm flex items-center justify-between gap-2 text-left">
+          <span id="pin-offline-text" class="font-medium">กำลังส่งข้อมูลคะแนนที่ค้างอยู่ในเครื่อง...</span>
+          <button id="pin-offline-retry" type="button" class="shrink-0 text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition">ส่งอีกครั้ง</button>
+        </div>
+
+        <form id="pin-form" class="mt-6 space-y-4" autocomplete="off">
+          <div>
+            <label for="pin-input" class="sr-only">รหัส PIN 4 หลัก</label>
+            <input
+              id="pin-input"
+              type="text"
+              inputmode="numeric"
+              pattern="[0-9]*"
+              maxlength="4"
+              placeholder="0000"
+              autofocus
+              class="w-full text-center text-4xl md:text-5xl font-extrabold tracking-[0.35em] pl-[0.35em] py-4 rounded-2xl border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition bg-slate-50 focus:bg-white text-slate-900 placeholder:text-slate-300"
+            />
+          </div>
+
+          <div id="pin-error" class="hidden text-sm font-semibold text-rose-600 bg-rose-50 border border-rose-200 rounded-xl px-4 py-2.5"></div>
+
+          <button
+            id="pin-submit-btn"
+            type="submit"
+            class="w-full py-3.5 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold text-lg shadow-lg shadow-blue-600/25 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            เข้าสู่ห้องเรียน →
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <footer class="flex items-center justify-center gap-4 text-xs text-slate-400">
+      <button id="device-tag-btn" type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 font-semibold shadow-sm transition">
+        <span>🖥️</span>
+        <span>เครื่อง: <strong id="device-tag-label">PC-0000</strong></span>
+        <span class="text-slate-400">(ตั้งค่า)</span>
+      </button>
+    </footer>
+  </section>
+
+  <!-- ======================================================================
+       SCREEN 2: STUDENT ROSTER SELECTION (22 STUDENTS / 2 SHIFTS)
+       ====================================================================== -->
+  <section id="screen-roster" class="hidden min-h-screen bg-slate-50 p-4 md:p-6">
+    <div class="max-w-6xl mx-auto space-y-5">
+      <!-- Active Session Banner -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 md:p-5 flex flex-wrap items-center justify-between gap-4">
+        <div class="space-y-1">
+          <div class="flex flex-wrap items-center gap-2">
+            <span id="roster-session-badge" class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800">สัปดาห์ที่ 1 • ฝึกทักษะ</span>
+            <span id="roster-duration-label" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">⏱️ 5 นาที</span>
+            <span id="roster-progress-label" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">ส่งแล้ว 0 / 22 คน</span>
+          </div>
+          <h2 id="roster-stage-title" class="text-xl md:text-2xl font-extrabold text-slate-900">เลือกชื่อของตนเองเพื่อเริ่มฝึกพิมพ์</h2>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button id="roster-refresh-btn" type="button" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm transition">
+            🔄 รีเฟรชรายชื่อ
+          </button>
+          <button id="roster-back-pin-btn" type="button" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-600 font-semibold text-sm transition">
+            ← เปลี่ยน PIN
+          </button>
+        </div>
+      </div>
+
+      <!-- Shift 1 & Shift 2 Columns -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <!-- Shift 1 -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 md:p-5">
+          <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
+            <div class="flex items-center gap-2">
+              <span class="w-8 h-8 rounded-xl bg-sky-100 text-sky-700 font-extrabold flex items-center justify-center text-sm">1</span>
+              <div>
+                <h3 class="font-extrabold text-slate-900 text-lg">ผลัดที่ 1 (เลขที่ 1–11)</h3>
+                <p class="text-xs text-slate-500">แตะที่ชื่อของตนเองเพื่อเริ่มรอบการฝึก</p>
+              </div>
+            </div>
+            <span id="shift1-count" class="text-xs font-bold px-2.5 py-1 rounded-full bg-sky-50 text-sky-700">0/11</span>
+          </div>
+          <div id="shift1-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"></div>
+        </div>
+
+        <!-- Shift 2 -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 md:p-5">
+          <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
+            <div class="flex items-center gap-2">
+              <span class="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-700 font-extrabold flex items-center justify-center text-sm">2</span>
+              <div>
+                <h3 class="font-extrabold text-slate-900 text-lg">ผลัดที่ 2 (เลขที่ 12–22)</h3>
+                <p class="text-xs text-slate-500">แตะที่ชื่อของตนเองเพื่อเริ่มรอบการฝึก</p>
+              </div>
+            </div>
+            <span id="shift2-count" class="text-xs font-bold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700">0/11</span>
+          </div>
+          <div id="shift2-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================================
+       SCREEN 3: GAMEPLAY (FITS CLEANLY IN 100VH ON 1280x720 - 1920x1080)
+       ====================================================================== -->
+  <section id="screen-game" class="hidden h-screen overflow-hidden flex flex-col bg-slate-50">
+    <!-- Top HUD -->
+    <header class="shrink-0 bg-white border-b border-slate-200 px-4 py-2.5 shadow-sm">
+      <div class="max-w-6xl mx-auto flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div class="w-9 h-9 rounded-xl bg-blue-600 text-white font-extrabold flex items-center justify-center text-sm shrink-0" id="hud-student-no">1</div>
+          <div class="min-w-0">
+            <div id="hud-student-name" class="font-bold text-slate-900 truncate text-sm md:text-base">ชื่อนักเรียน</div>
+            <div class="flex items-center gap-1.5 text-xs">
+              <span id="hud-mode-badge" class="font-bold text-blue-700">ฝึกทักษะ</span>
+              <span class="text-slate-300">•</span>
+              <span id="hud-stage-badge" class="text-slate-500 truncate">ด่าน 1</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 md:gap-4 shrink-0">
+          <!-- Countdown Timer -->
+          <div class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-900 text-white font-mono">
+            <span class="text-xs opacity-75">⏱️</span>
+            <span id="hud-timer" class="text-lg md:text-xl font-extrabold tracking-wider">05:00</span>
+          </div>
+
+          <!-- Live Metrics -->
+          <div class="hidden sm:flex items-center gap-3 bg-slate-100 rounded-xl px-3.5 py-1.5">
+            <div class="text-center">
+              <div class="text-[10px] font-semibold text-slate-500 leading-none">Net WPM</div>
+              <div id="hud-wpm" class="text-base font-extrabold text-blue-700 leading-tight">0</div>
+            </div>
+            <div class="w-px h-6 bg-slate-300"></div>
+            <div class="text-center">
+              <div class="text-[10px] font-semibold text-slate-500 leading-none">ความแม่นยำ</div>
+              <div id="hud-acc" class="text-base font-extrabold text-emerald-600 leading-tight">100%</div>
+            </div>
+            <div class="w-px h-6 bg-slate-300"></div>
+            <div class="text-center">
+              <div class="text-[10px] font-semibold text-slate-500 leading-none">Combo</div>
+              <div id="hud-combo" class="text-base font-extrabold text-orange-500 leading-tight">0 🔥</div>
+            </div>
+          </div>
+
+          <!-- Mute Toggle -->
+          <button id="hud-mute-btn" type="button" title="เปิด/ปิดเสียง" class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center text-lg transition">
+            🔊
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Gameplay Workspace -->
+    <main class="flex-1 min-h-0 flex flex-col justify-between max-w-6xl w-full mx-auto px-3 md:px-5 py-2.5 gap-2">
+      <!-- Language Warning Banner Slot (Fixed Height -> Zero Layout Shift) -->
+      <div class="shrink-0 h-9 flex items-center justify-center">
+        <div id="lang-warning-banner" class="hidden w-full max-w-2xl text-center px-4 py-1.5 rounded-xl bg-amber-300 border-2 border-amber-500 text-slate-950 font-extrabold text-sm md:text-base shadow-md">
+          ⚠️ ลืมเปลี่ยนภาษา! กดปุ่มตัวหนอน (~) มุมซ้ายบน
+        </div>
+        <div id="guide-mode-badge" class="hidden inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-slate-200 text-slate-700"></div>
+      </div>
+
+      <!-- Word Focus Zone -->
+      <div class="flex-1 min-h-0 flex flex-col items-center justify-center">
+        <div id="word-card" class="w-full max-w-3xl bg-white rounded-3xl border-2 border-slate-200 shadow-sm px-6 py-4 md:py-5 text-center transition-colors">
+          <div id="current-word-display" class="thai-word-display text-5xl md:text-6xl font-bold tracking-wider select-none min-h-[1.9em] flex items-center justify-center flex-wrap"></div>
+
+          <!-- Subtle character sequence indicator for Thai vowels/tones clarity -->
+          <div id="char-step-strip" class="mt-1 flex items-center justify-center gap-1 flex-wrap min-h-[26px]"></div>
+
+          <!-- Next 2 preview words -->
+          <div id="next-words-preview" class="mt-2.5 pt-2.5 border-t border-slate-100 flex items-center justify-center gap-5 text-lg md:text-xl font-semibold text-slate-400 select-none"></div>
+        </div>
+
+        <p id="start-prompt-hint" class="mt-2 text-sm font-semibold text-blue-600 animate-pulse">
+          ⌨️ กดแป้นตัวอักษรแรกเพื่อเริ่มจับเวลา...
+        </p>
+      </div>
+
+      <!-- Virtual Keyboard Zone -->
+      <div class="shrink-0 pb-1">
+        <div id="virtual-keyboard-container"></div>
+      </div>
+    </main>
+  </section>
+
+  <!-- ======================================================================
+       SCREEN 4: SUMMARY & AUTO-LOGOUT
+       ====================================================================== -->
+  <section id="screen-summary" class="hidden min-h-screen flex items-center justify-center p-4 md:p-6 bg-gradient-to-br from-emerald-50 via-white to-sky-50">
+    <div class="w-full max-w-2xl bg-white rounded-3xl shadow-xl border border-slate-100 p-6 md:p-8 text-center space-y-5">
+      <div>
+        <div id="summary-stars" class="text-5xl md:text-6xl tracking-widest mb-2">⭐⭐⭐</div>
+        <h2 class="text-2xl md:text-3xl font-extrabold text-slate-900">เยี่ยมมาก! จบรอบการฝึกแล้ว</h2>
+        <p id="summary-student-label" class="text-slate-600 font-semibold mt-1"></p>
+        <p id="summary-stage-label" class="text-xs text-slate-400 mt-0.5"></p>
+      </div>
+
+      <!-- Score Cards -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div class="p-4 rounded-2xl bg-blue-50 border border-blue-100">
+          <div class="text-xs font-bold text-blue-600">ความเร็วสุทธิ (Net WPM)</div>
+          <div id="summary-net-wpm" class="text-3xl font-extrabold text-blue-800 mt-1">0.00</div>
+        </div>
+        <div class="p-4 rounded-2xl bg-emerald-50 border border-emerald-100">
+          <div class="text-xs font-bold text-emerald-600">ความแม่นยำ</div>
+          <div id="summary-acc" class="text-3xl font-extrabold text-emerald-700 mt-1">0.00%</div>
+        </div>
+        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+          <div class="text-xs font-bold text-slate-500">ความเร็วรวม (Gross WPM)</div>
+          <div id="summary-gross-wpm" class="text-2xl font-extrabold text-slate-800 mt-1">0.00</div>
+        </div>
+        <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+          <div class="text-xs font-bold text-slate-500">คำที่พิมพ์จบ</div>
+          <div id="summary-words" class="text-2xl font-extrabold text-slate-800 mt-0.5">0 คำ</div>
+        </div>
+        <div class="p-3.5 rounded-2xl bg-orange-50 border border-orange-100">
+          <div class="text-xs font-bold text-orange-600">Combo สูงสุด</div>
+          <div id="summary-combo" class="text-2xl font-extrabold text-orange-600 mt-0.5">0 🔥</div>
+        </div>
+        <div class="p-3.5 rounded-2xl bg-amber-50 border border-amber-100">
+          <div class="text-xs font-bold text-amber-700">เตือนเปลี่ยนภาษา</div>
+          <div id="summary-warnings" class="text-2xl font-extrabold text-amber-700 mt-0.5">0 ครั้ง</div>
+        </div>
+      </div>
+
+      <!-- Submission Status -->
+      <div class="space-y-2">
+        <div id="summary-save-status" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-blue-50 text-blue-700 border border-blue-200">
+          ⏳ กำลังบันทึกคะแนนเข้าสู่ระบบ...
+        </div>
+        <div>
+          <button id="summary-retry-btn" type="button" class="hidden px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm shadow transition">
+            🔄 ส่งคะแนนอีกครั้ง
+          </button>
+        </div>
+      </div>
+
+      <!-- 15-Second Auto-Logout Progress Bar -->
+      <div id="logout-countdown-wrap" class="pt-2 space-y-2.5">
+        <div class="text-sm text-slate-500 font-medium">
+          ระบบจะกลับไปหน้าเลือกรายชื่ออัตโนมัติใน <strong id="logout-countdown-sec" class="text-slate-800">15</strong> วินาที (สำหรับเพื่อนผลัดถัดไป)
+        </div>
+        <div class="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
+          <div id="logout-progress-bar" class="h-full bg-blue-600 rounded-full transition-all duration-1000 ease-linear" style="width: 100%"></div>
+        </div>
+        <button id="return-roster-btn" type="button" class="w-full sm:w-auto px-7 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-base shadow-lg shadow-blue-600/20 transition">
+          กลับหน้าเลือกรายชื่อทันที
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================================
+       MODAL: CONFIRM STUDENT IDENTITY
+       ====================================================================== -->
+  <div id="confirm-student-modal" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 md:p-7 text-center space-y-5">
+      <div class="w-16 h-16 mx-auto rounded-2xl bg-blue-100 text-blue-700 font-extrabold text-2xl flex items-center justify-center" id="confirm-student-no">1</div>
+      <div>
+        <div class="text-xs font-bold uppercase tracking-wider text-blue-600">ยืนยันตัวตนก่อนเริ่มฝึก</div>
+        <h3 id="confirm-student-name" class="text-2xl font-extrabold text-slate-900 mt-1">เลขที่ 1 — ชื่อนักเรียน</h3>
+        <p id="confirm-student-shift" class="text-sm text-slate-500 mt-1">ผลัดที่ 1</p>
+      </div>
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl p-3 text-xs text-amber-800 font-medium">
+        ⚠️ ตรวจสอบชื่อให้ถูกต้อง! เมื่อเล่นจบแล้วจะไม่สามารถเข้าชื่อเดิมซ้ำในรอบนี้ได้
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <button id="confirm-cancel-btn" type="button" class="py-3 px-4 rounded-2xl border-2 border-slate-200 hover:bg-slate-100 text-slate-700 font-bold transition">
+          เปลี่ยนคน
+        </button>
+        <button id="confirm-start-btn" type="button" class="py-3 px-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-lg shadow-blue-600/25 transition">
+          เริ่มเล่น 🚀
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       MODAL: DEVICE TAG (PC-01..PC-12)
+       ====================================================================== -->
+  <div id="device-modal" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-extrabold text-slate-900">🖥️ ตั้งชื่อเครื่องคอมพิวเตอร์</h3>
+        <button id="device-cancel-btn" type="button" class="text-slate-400 hover:text-slate-700 text-xl font-bold px-2">×</button>
+      </div>
+      <p class="text-xs text-slate-500">เลือกหมายเลขเครื่องเพื่อให้คุณครูตรวจสอบได้ง่ายในหน้าติดตามผลสด</p>
+      <div id="device-presets" class="grid grid-cols-4 gap-2"></div>
+      <div class="flex gap-2 pt-2 border-t border-slate-100">
+        <input id="device-custom-input" type="text" maxlength="24" placeholder="เช่น PC-01" class="flex-1 px-3.5 py-2 rounded-xl border border-slate-300 text-sm font-bold uppercase focus:border-blue-500 outline-none" />
+        <button id="device-save-btn" type="button" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm transition">บันทึก</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./js/game.js"></script>
+</body>
+</html>

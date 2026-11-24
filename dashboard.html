@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>แดชบอร์ดวิเคราะห์ผลวิจัย — Thai Typing Research</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Sarabun', 'Noto Sans Thai', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen antialiased">
+
+  <!-- ======================================================================
+       AUTH GUARD VIEW (TEACHER LOGIN)
+       ====================================================================== -->
+  <section id="dash-auth-view" class="min-h-screen flex flex-col justify-center items-center p-4 bg-gradient-to-br from-indigo-50 via-white to-sky-50">
+    <div class="w-full max-w-md bg-white rounded-3xl shadow-xl border border-slate-200/80 p-7 md:p-8 space-y-6">
+      <div class="text-center">
+        <div class="w-14 h-14 mx-auto rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-2xl shadow-lg mb-3">
+          📊
+        </div>
+        <h1 class="text-2xl font-extrabold text-slate-900">แดชบอร์ดวิเคราะห์ผลวิจัย</h1>
+        <p class="text-sm text-slate-500 mt-1">เข้าสู่ระบบด้วยบัญชีครูผู้สอนเพื่อดูสถิติ กราฟ และส่งออกข้อมูล CSV</p>
+      </div>
+
+      <form id="dash-login-form" class="space-y-4">
+        <div>
+          <label for="dash-email" class="block text-sm font-bold text-slate-700 mb-1">อีเมลครูผู้สอน</label>
+          <input id="dash-email" type="email" required autocomplete="username" placeholder="teacher@school.ac.th" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 outline-none text-sm" />
+        </div>
+        <div>
+          <label for="dash-password" class="block text-sm font-bold text-slate-700 mb-1">รหัสผ่าน</label>
+          <input id="dash-password" type="password" required autocomplete="current-password" placeholder="••••••••" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 outline-none text-sm" />
+        </div>
+        <div id="dash-login-error" class="hidden text-sm font-semibold text-rose-600 bg-rose-50 border border-rose-200 rounded-xl px-3.5 py-2"></div>
+        <button id="dash-login-btn" type="submit" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-lg shadow-indigo-600/20 transition disabled:opacity-50">
+          เข้าสู่แดชบอร์ดวิจัย
+        </button>
+      </form>
+
+      <div class="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-500">
+        <a href="./index.html" class="hover:text-indigo-600">← หน้าเด็กนักเรียน</a>
+        <a href="./admin.html" class="hover:text-indigo-600">ควบคุมห้องเรียน (Admin) →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================================
+       MAIN RESEARCH DASHBOARD
+       ====================================================================== -->
+  <div id="dash-main-view" class="hidden min-h-screen flex flex-col">
+    <!-- Top Navbar -->
+    <header class="bg-white border-b border-slate-200">
+      <div class="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3 min-w-0">
+          <span class="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-extrabold shrink-0">📊</span>
+          <div class="min-w-0">
+            <h1 class="font-extrabold text-slate-900 text-base md:text-lg truncate">แดชบอร์ดวิเคราะห์ผลวิจัยพิมพ์ดีดไทย ป.6</h1>
+            <p id="dash-user-email" class="text-xs text-slate-500 truncate"></p>
+          </div>
+        </div>
+
+        <nav class="flex items-center gap-2">
+          <button id="btn-dash-refresh" type="button" class="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition">
+            🔄 โหลดข้อมูลใหม่
+          </button>
+          <a href="./admin.html" class="px-3 py-1.5 rounded-xl text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 transition">
+            🎛️ ควบคุมห้องเรียน
+          </a>
+          <a href="./index.html" target="_blank" class="hidden sm:inline-flex px-3 py-1.5 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">
+            🖥️ หน้านักเรียน
+          </a>
+          <button id="dash-logout-btn" type="button" class="px-3 py-1.5 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 transition">
+            ออกจากระบบ
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Sticky Research Filter Bar -->
+    <div class="sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-xs">
+      <div class="max-w-7xl mx-auto px-4 md:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+        <!-- IEP Exclusion Toggle -->
+        <div class="inline-flex p-1 rounded-2xl bg-slate-100 border border-slate-200" role="group" aria-label="ตัวกรองกลุ่มตัวอย่าง IEP">
+          <button id="filter-iep-all" type="button" class="px-3.5 py-1.5 rounded-xl text-xs md:text-sm font-bold bg-white text-indigo-700 shadow-xs transition">
+            รวมนักเรียนทั้งหมด (N=22)
+          </button>
+          <button id="filter-iep-research" type="button" class="px-3.5 py-1.5 rounded-xl text-xs md:text-sm font-bold text-slate-600 hover:text-slate-900 transition">
+            เฉพาะกลุ่มวิเคราะห์วิจัย (ไม่รวม IEP)
+          </button>
+        </div>
+
+        <!-- Individual Student Filter -->
+        <div class="flex items-center gap-2">
+          <label for="filter-student-select" class="text-xs font-bold text-slate-500">ขอบเขตนักเรียน:</label>
+          <select id="filter-student-select" class="px-3 py-1.5 rounded-xl border border-slate-300 bg-white text-xs md:text-sm font-bold text-slate-800 focus:border-indigo-500 outline-none">
+            <option value="ALL">ภาพรวมทั้งห้อง</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 md:px-6 py-6 space-y-6">
+      <div id="dash-loading" class="hidden text-center py-8 text-sm font-bold text-indigo-600">
+        ⏳ กำลังโหลดข้อมูลจากฐานข้อมูล Supabase...
+      </div>
+
+      <!-- ==================================================================
+           SECTION 1: 4 RESEARCH KPI CARDS
+           ================================================================== -->
+      <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- KPI 1: Mean Net WPM -->
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-xs p-5 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-500">ความเร็วเฉลี่ย (Mean Net WPM)</span>
+            <span id="kpi-wpm-delta" class="text-xs font-extrabold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">-</span>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <span id="kpi-wpm-pre" class="text-xl font-bold text-slate-400">-</span>
+            <span class="text-slate-400 font-bold">→</span>
+            <span id="kpi-wpm-post" class="text-3xl font-extrabold text-blue-700">-</span>
+          </div>
+          <div id="kpi-wpm-sub" class="text-[11px] font-semibold text-slate-500">Pre vs Post</div>
+          <div id="kpi-wpm-stats" class="pt-2 border-t border-slate-100 text-[11px] text-slate-500 space-y-0.5"></div>
+        </div>
+
+        <!-- KPI 2: Mean Accuracy % -->
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-xs p-5 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-500">ความแม่นยำเฉลี่ย (Accuracy %)</span>
+            <span id="kpi-acc-delta" class="text-xs font-extrabold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700">-</span>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <span id="kpi-acc-pre" class="text-xl font-bold text-slate-400">-</span>
+            <span class="text-slate-400 font-bold">→</span>
+            <span id="kpi-acc-post" class="text-3xl font-extrabold text-emerald-600">-</span>
+          </div>
+          <div id="kpi-acc-sub" class="text-[11px] font-semibold text-slate-500">Pre vs Post</div>
+          <div id="kpi-acc-stats" class="pt-2 border-t border-slate-100 text-[11px] text-slate-500 space-y-0.5"></div>
+        </div>
+
+        <!-- KPI 3: Sessions & Attendance -->
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-xs p-5 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-500">รอบฝึกและอัตราการเข้าฝึก</span>
+            <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700">Attendance</span>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <span id="kpi-attendance-pct" class="text-3xl font-extrabold text-indigo-700">-</span>
+            <span id="kpi-sessions-count" class="text-sm font-bold text-slate-500">0 รอบ</span>
+          </div>
+          <div id="kpi-logs-total" class="text-[11px] font-semibold text-slate-500">บันทึกข้อมูลแล้ว 0 รายการ</div>
+          <div id="kpi-attendance-detail" class="pt-2 border-t border-slate-100 text-[11px] text-slate-500"></div>
+        </div>
+
+        <!-- KPI 4: Language-Switch Warnings -->
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-xs p-5 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-500">แจ้งเตือนลืมเปลี่ยนภาษา (~)</span>
+            <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">Chapter 5</span>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <span id="kpi-warnings-total" class="text-3xl font-extrabold text-amber-600">0</span>
+            <span class="text-sm font-bold text-slate-500">ครั้ง</span>
+          </div>
+          <div id="kpi-warnings-avg" class="text-[11px] font-semibold text-slate-500">เฉลี่ย 0.00 ครั้ง/รอบ</div>
+          <div class="pt-2 border-t border-slate-100 text-[11px] text-slate-500">
+            ข้อมูลพฤติกรรมการลืมสลับแป้นพิมพ์ ENG→TH สำหรับอภิปรายผลบทที่ 5
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================================================================
+           SECTION 2: 4 INTERACTIVE CHART.JS CHARTS (WITH WHITE PNG EXPORT)
+           ================================================================== -->
+      <section class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <!-- Chart 1: Learning Curve -->
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-xs p-5 flex flex-col">
+          <div class="flex items-start justify-between gap-2 mb-3">
+            <div>
+              <h2 class="font-extrabold text-slate-900 text-base">1. เส้นพัฒนาการรายสัปดาห์ (Learning Curve)</h2>
+              <p class="text-xs text-slate-500">เปรียบเทียบ Mean Net WPM (แกนซ้าย) และ Mean Accuracy % (แกนขวา)</p>
+            </div>
+            <button type="button" data-download-chart="learningCurve" class="shrink-0 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-indigo-600 hover:text-white text-slate-700 font-bold text-xs transition">
+              📥 ดาวน์โหลด PNG
+            </button>
+          </div>
+          <div class="relative h-72 w-full">
+            <canvas id="chart-learning-curve"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 2: Pretest vs Posttest by Student -->
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-xs p-5 flex flex-col">
+          <div class="flex items-start justify-between gap-2 mb-3">
+            <div>
+              <h2 class="font-extrabold text-slate-900 text-base">2. เปรียบเทียบก่อนเรียน–หลังเรียนรายบุคคล</h2>
+              <p id="chart-prepost-subtitle" class="text-xs text-slate-500">Pretest Net WPM เทียบกับ Posttest Net WPM (เลขที่ 1–22)</p>
+            </div>
+            <button type="button" data-download-chart="prePostStudent" class="shrink-0 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-indigo-600 hover:text-white text-slate-700 font-bold text-xs transition">
+              📥 ดาวน์โหลด PNG
+            </button>
+          </div>
+          <div class="relative h-72 w-full">
+            <canvas id="chart-prepost-student"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 3: Top 10 Most Missed Thai Keys -->
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-xs p-5 flex flex-col">
+          <div class="flex items-start justify-between gap-2 mb-3">
+            <div>
+              <h2 class="font-extrabold text-slate-900 text-base">3. 10 แป้นอักษรไทยที่พิมพ์ผิดบ่อยที่สุด</h2>
+              <p class="text-xs text-slate-500">รวบรวมความถี่จาก weak_keys_json ทุกครั้งที่นักเรียนกดผิด</p>
+            </div>
+            <button type="button" data-download-chart="weakKeys" class="shrink-0 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-indigo-600 hover:text-white text-slate-700 font-bold text-xs transition">
+              📥 ดาวน์โหลด PNG
+            </button>
+          </div>
+          <div class="relative h-72 w-full">
+            <canvas id="chart-weak-keys"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 4: Shift 1 vs Shift 2 Comparison -->
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-xs p-5 flex flex-col">
+          <div class="flex items-start justify-between gap-2 mb-3">
+            <div>
+              <h2 class="font-extrabold text-slate-900 text-base">4. เปรียบเทียบผลัดที่ 1 กับผลัดที่ 2</h2>
+              <p class="text-xs text-slate-500">ตรวจสอบความเท่าเทียมของผลัดการเรียน (Mean Net WPM และ Accuracy %)</p>
+            </div>
+            <button type="button" data-download-chart="shiftCompare" class="shrink-0 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-indigo-600 hover:text-white text-slate-700 font-bold text-xs transition">
+              📥 ดาวน์โหลด PNG
+            </button>
+          </div>
+          <div class="relative h-72 w-full">
+            <canvas id="chart-shift-compare"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================================================================
+           SECTION 3: INDIVIDUAL SUMMARY TABLE & RESEARCH CSV EXPORTS
+           ================================================================== -->
+      <section class="bg-white rounded-3xl border border-slate-200 shadow-xs p-5 md:p-6 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 class="text-lg font-extrabold text-slate-900">📋 ตารางสรุปผลรายบุคคล &amp; ส่งออกข้อมูลวิจัย (.CSV)</h2>
+            <p class="text-xs text-slate-500">คลิกที่หัวตารางเพื่อเรียงลำดับ — ไฟล์ CSV เข้ารหัส UTF-8 BOM พร้อมเปิดใน Excel, SPSS และ Jamovi</p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <button id="btn-export-raw" type="button" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs md:text-sm shadow-xs transition">
+              📄 Export Raw Logs (.csv)
+            </button>
+            <button id="btn-export-paired" type="button" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs md:text-sm shadow-xs transition">
+              📊 Export Pre-Post Paired (.csv)
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm text-left border-collapse">
+            <thead>
+              <tr class="border-b border-slate-200 bg-slate-50 text-xs text-slate-600">
+                <th class="sortable-th py-2.5 px-3 font-bold" data-sort="student_no">เลขที่ <span class="sort-ind">▲</span></th>
+                <th class="sortable-th py-2.5 px-3 font-bold" data-sort="full_name">ชื่อ-นามสกุล <span class="sort-ind"></span></th>
+                <th class="sortable-th py-2.5 px-3 font-bold text-center" data-sort="default_shift">ผลัด <span class="sort-ind"></span></th>
+                <th class="sortable-th py-2.5 px-3 font-bold text-center" data-sort="is_iep_excluded">IEP <span class="sort-ind"></span></th>
+                <th class="sortable-th py-2.5 px-3 font-bold text-right" data-sort="preWpm">Pre WPM <span class="sort-ind"></span></th>
+                <th class="sortable-th py-2.5 px-3 font-bold text-right" data-sort="avgPracticeWpm">Avg Practice WPM <span class="sort-ind"></span></th>
+                <th class="sortable-th py-2.5 px-3 font-bold text-right" data-sort="postWpm">Post WPM <span class="sort-ind"></span></th>
+                <th class="sortable-th py-2.5 px-3 font-bold text-right" data-sort="gainWpm">Gain WPM <span class="sort-ind"></span></th>
+                <th class="sortable-th py-2.5 px-3 font-bold text-right" data-sort="preAcc">Pre Acc% <span class="sort-ind"></span></th>
+                <th class="sortable-th py-2.5 px-3 font-bold text-right" data-sort="postAcc">Post Acc% <span class="sort-ind"></span></th>
+                <th class="sortable-th py-2.5 px-3 font-bold text-right" data-sort="rounds">จำนวนรอบ <span class="sort-ind"></span></th>
+              </tr>
+            </thead>
+            <tbody id="summary-table-tbody" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module" src="./js/dashboard.js"></script>
+</body>
+</html>
