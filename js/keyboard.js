@@ -86,6 +86,28 @@ export const KEDMANEE_CHAR_MAP = (() => {
   return map;
 })();
 
+export const KEDMANEE_CODE_MAP = (() => {
+  const map = new Map();
+  for (const row of KEDMANEE_ROWS) {
+    for (const key of row) {
+      if (key.isSpacer || key.isModifier) continue;
+      if (typeof key.normal === 'string') {
+        map.set(key.code, {
+          normal: key.normal,
+          shift: typeof key.shift === 'string' ? key.shift : key.normal,
+        });
+      }
+    }
+  }
+  return map;
+})();
+
+export function resolveKedmaneeChar(eventCode, shiftKey) {
+  const entry = KEDMANEE_CODE_MAP.get(eventCode);
+  if (!entry) return '';
+  return shiftKey ? entry.shift : entry.normal;
+}
+
 const COMBINING_MARKS = new Set([
   'ั', 'ิ', 'ี', 'ึ', 'ื', 'ุ', 'ู', 'ฺ',
   '่', '้', '๊', '๋', '็', '์', 'ํ',

@@ -5,6 +5,7 @@ import {
   getStageMeta,
   formatNumber,
   escapeHtml,
+  getShiftGroupMeta,
 } from './config.js';
 import { icon } from './icons.js';
 
@@ -25,6 +26,7 @@ const els = {
   // Tabs
   tabBtnSessions: document.getElementById('tab-btn-sessions'),
   tabBtnStudents: document.getElementById('tab-btn-students'),
+  tabStudentsLabel: document.getElementById('tab-students-label'),
   tabSessions: document.getElementById('tab-sessions'),
   tabStudents: document.getElementById('tab-students'),
 
@@ -54,12 +56,15 @@ const els = {
   btnDeleteActive: document.getElementById('btn-delete-active-session'),
 
   // Monitor
+  monitorHeadingLabel: document.getElementById('monitor-heading-label'),
   monitorSessionLabel: document.getElementById('monitor-session-label'),
   monitorCountText: document.getElementById('monitor-count-text'),
   monitorProgressBar: document.getElementById('monitor-progress-bar'),
   monitorAutoRefresh: document.getElementById('monitor-auto-refresh'),
   btnRefreshMonitor: document.getElementById('btn-refresh-monitor'),
   monitorLastUpdated: document.getElementById('monitor-last-updated'),
+  monitorShift1Title: document.getElementById('monitor-shift1-title'),
+  monitorShift2Title: document.getElementById('monitor-shift2-title'),
   monitorShift1Grid: document.getElementById('monitor-shift1-grid'),
   monitorShift2Grid: document.getElementById('monitor-shift2-grid'),
   monitorShift1Count: document.getElementById('monitor-shift1-count'),
@@ -81,10 +86,28 @@ const els = {
   btnConfirmDeleteSession: document.getElementById('btn-confirm-delete-session'),
   btnCancelDeleteSession: document.getElementById('btn-cancel-delete-session'),
 
+  // Delete student modal
+  deleteStudentModal: document.getElementById('delete-student-modal'),
+  deleteStudentDesc: document.getElementById('delete-student-desc'),
+  inputDeleteStudentRebalance: document.getElementById('input-delete-student-rebalance'),
+  btnConfirmDeleteStudent: document.getElementById('btn-confirm-delete-student'),
+  btnCancelDeleteStudent: document.getElementById('btn-cancel-delete-student'),
+
   // Students manager
+  addStudentForm: document.getElementById('add-student-form'),
+  inputNewStudentName: document.getElementById('input-new-student-name'),
+  inputNewStudentShift: document.getElementById('input-new-student-shift'),
+  inputNewStudentIep: document.getElementById('input-new-student-iep'),
+  btnAddStudent: document.getElementById('btn-add-student'),
+  studentsHeadingTitle: document.getElementById('students-heading-title'),
   btnSaveAllStudents: document.getElementById('btn-save-all-students'),
+  reorderBar: document.getElementById('reorder-bar'),
+  reorderStatusText: document.getElementById('reorder-status-text'),
+  inputReorderRebalance: document.getElementById('input-reorder-rebalance'),
+  btnSaveOrder: document.getElementById('btn-save-order'),
   studentsSaveFeedback: document.getElementById('students-save-feedback'),
   studentsTbody: document.getElementById('students-tbody'),
+  bulkPasteDesc: document.getElementById('bulk-paste-desc'),
   bulkTextarea: document.getElementById('bulk-paste-textarea'),
   btnBulkPreview: document.getElementById('btn-bulk-preview'),
   btnBulkApply: document.getElementById('btn-bulk-apply'),
@@ -94,6 +117,7 @@ const els = {
 const state = {
   user: null,
   students: [],
+  orderDirty: false,
   sessions: [],
   activeSession: null,
   monitoredSessionId: null,
@@ -101,6 +125,7 @@ const state = {
   pollTimer: null,
   pendingDeleteLog: null,
   pendingDeleteSession: null,
+  pendingDeleteStudent: null,
 };
 
 // ============================================================================
@@ -206,6 +231,18 @@ function syncDurationPresetHighlight(sec) {
 // ============================================================================
 // Data Loading
 // ============================================================================
+function updateDynamicRosterLabels() {
+  const n = state.students.length;
+  els.tabStudentsLabel.textContent = `จัดการรายชื่อนักเรียน (${n} คน)`;
+  els.monitorHeadingLabel.textContent = `ติดตามการส่งคะแนนแบบสด (${n} คน)`;
+  els.studentsHeadingTitle.textContent = `รายชื่อนักเรียนชั้น ป.6 (${n} คน)`;
+  els.bulkPasteDesc.textContent =
+    n > 0
+      ? `คัดลอกรายชื่อนักเรียนสูงสุด ${n} บรรทัดจาก Excel หรือ Word มาวางด้านล่าง ระบบจะเรียงใส่เลขที่ 1–${n} ให้อัตโนมัติ (รองรับทั้งแบบมีเลขที่นำหน้าและเฉพาะชื่อ)`
+      : 'ยังไม่มีรายชื่อนักเรียนในระบบ กรุณาเพิ่มนักเรียนด้านบนก่อนใช้งานการวางรายชื่อแบบกลุ่ม';
+  els.btnBulkApply.textContent = n > 0 ? `อัปเดตทันที (${n} คน)` : 'อัปเดตทันที';
+}
+
 async function loadStudents() {
   const { data, error } = await supabase
     .from('students')
@@ -218,7 +255,10 @@ async function loadStudents() {
   }
 
   state.students = data || [];
+  state.orderDirty = false;
+  updateDynamicRosterLabels();
   renderStudentsTable();
+  updateReorderBarUI();
 }
 
 async function loadSessions() {
@@ -295,11 +335,20 @@ function renderActiveHero() {
 }
 
 function renderLiveMonitor() {
+  const totalStudents = state.students.length;
+  const shift1Meta = getShiftGroupMeta(state.students, 1);
+  const shift2Meta = getShiftGroupMeta(state.students, 2);
+
+  els.monitorShift1Title.textContent = shift1Meta.title;
+  els.monitorShift2Title.textContent = shift2Meta.title;
+
   const session = state.sessions.find((s) => s.session_id === state.monitoredSessionId);
   if (!session) {
     els.monitorSessionLabel.textContent = 'ยังไม่ได้เลือกรอบการเล่น';
-    els.monitorCountText.textContent = `ส่งแล้ว 0 / ${state.students.length || 22} คน`;
+    els.monitorCountText.textContent = `ส่งแล้ว 0 / ${totalStudents} คน`;
     els.monitorProgressBar.style.width = '0%';
+    els.monitorShift1Count.textContent = `0/${shift1Meta.count}`;
+    els.monitorShift2Count.textContent = `0/${shift2Meta.count}`;
     els.monitorShift1Grid.innerHTML = '';
     els.monitorShift2Grid.innerHTML = '';
     return;
@@ -313,23 +362,23 @@ function renderLiveMonitor() {
   els.monitorSessionLabel.innerHTML = `${statusBadge} <span>• สัปดาห์ที่ ${escapeHtml(session.week_no)} (${escapeHtml(modeLabel)}) • ${escapeHtml(stageMeta.shortTitle)} • PIN: ${escapeHtml(session.session_pin)}</span>`;
 
   const logByStudent = new Map(state.monitoredLogs.map((l) => [l.student_id, l]));
-  const totalStudents = state.students.length || 22;
   const submittedCount = state.students.filter((st) => logByStudent.has(st.student_id)).length;
   const pct = totalStudents > 0 ? Math.round((submittedCount / totalStudents) * 100) : 0;
 
   els.monitorCountText.textContent = `ส่งแล้ว ${submittedCount} / ${totalStudents} คน`;
   els.monitorProgressBar.style.width = `${pct}%`;
 
-  const shift1 = state.students.filter((s) => (s.default_shift ?? (s.student_no <= 11 ? 1 : 2)) === 1);
-  const shift2 = state.students.filter((s) => (s.default_shift ?? (s.student_no <= 11 ? 1 : 2)) === 2);
-
-  const s1Done = shift1.filter((s) => logByStudent.has(s.student_id)).length;
-  const s2Done = shift2.filter((s) => logByStudent.has(s.student_id)).length;
-  els.monitorShift1Count.textContent = `${s1Done}/${shift1.length}`;
-  els.monitorShift2Count.textContent = `${s2Done}/${shift2.length}`;
+  const s1Done = shift1Meta.list.filter((s) => logByStudent.has(s.student_id)).length;
+  const s2Done = shift2Meta.list.filter((s) => logByStudent.has(s.student_id)).length;
+  els.monitorShift1Count.textContent = `${s1Done}/${shift1Meta.count}`;
+  els.monitorShift2Count.textContent = `${s2Done}/${shift2Meta.count}`;
 
   const renderCards = (container, list) => {
     container.innerHTML = '';
+    if (list.length === 0) {
+      container.innerHTML = '<div class="col-span-full text-center py-4 text-xs text-slate-400">ไม่มีนักเรียนในผลัดนี้</div>';
+      return;
+    }
     for (const student of list) {
       const log = logByStudent.get(student.student_id);
       const card = document.createElement('div');
@@ -373,8 +422,8 @@ function renderLiveMonitor() {
     }
   };
 
-  renderCards(els.monitorShift1Grid, shift1);
-  renderCards(els.monitorShift2Grid, shift2);
+  renderCards(els.monitorShift1Grid, shift1Meta.list);
+  renderCards(els.monitorShift2Grid, shift2Meta.list);
 }
 
 function renderPastSessionsTable() {
@@ -612,46 +661,118 @@ async function confirmDeleteSession() {
 }
 
 // ============================================================================
-// Tab 2: Student Roster Manager (22 Students + Bulk Paste)
+// Tab 2: Student Roster Manager (Add / Reorder / Delete RPCs + Bulk Paste)
+// NEVER updates student_no directly from client JS
 // ============================================================================
-function renderStudentsTable() {
-  els.studentsTbody.innerHTML = '';
-  for (const st of state.students) {
-    const tr = document.createElement('tr');
-    tr.dataset.studentId = st.student_id;
-    tr.className = 'hover:bg-slate-50';
-    tr.innerHTML = `
-      <td class="py-2 px-2.5 font-extrabold text-slate-700">${escapeHtml(st.student_no)}</td>
-      <td class="py-2 px-2.5"><span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600">${escapeHtml(st.student_id)}</span></td>
-      <td class="py-2 px-2.5">
-        <input type="text" data-field="full_name" value="${escapeHtml(st.full_name)}" class="w-full min-w-[180px] px-2.5 py-1.5 rounded-lg border border-slate-300 text-sm font-medium focus:border-blue-500 outline-none" />
-      </td>
-      <td class="py-2 px-2.5">
-        <select data-field="default_shift" class="px-2 py-1.5 rounded-lg border border-slate-300 text-xs font-bold bg-white outline-none">
-          <option value="1" ${st.default_shift === 1 ? 'selected' : ''}>ผลัด 1</option>
-          <option value="2" ${st.default_shift === 2 ? 'selected' : ''}>ผลัด 2</option>
-        </select>
-      </td>
-      <td class="py-2 px-2.5 text-center">
-        <input type="checkbox" data-field="is_iep_excluded" ${st.is_iep_excluded ? 'checked' : ''} class="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 cursor-pointer" />
-      </td>
-      <td class="py-2 px-2.5 text-right">
-        <button type="button" data-save-row="${escapeHtml(st.student_id)}" class="px-3 py-1 rounded-lg bg-slate-100 hover:bg-blue-600 hover:text-white text-slate-700 font-bold text-xs transition">
-          บันทึก
-        </button>
-      </td>
-    `;
-
-    tr.querySelector('[data-save-row]').addEventListener('click', () => saveSingleStudentRow(tr, st.student_id));
-    els.studentsTbody.appendChild(tr);
+function syncInputsIntoState() {
+  const rows = Array.from(els.studentsTbody.querySelectorAll('tr[data-student-id]'));
+  const byId = new Map(state.students.map((s) => [s.student_id, s]));
+  for (const tr of rows) {
+    const id = tr.dataset.studentId;
+    const item = byId.get(id);
+    if (!item) continue;
+    const nameInput = tr.querySelector('[data-field="full_name"]');
+    const shiftSelect = tr.querySelector('[data-field="default_shift"]');
+    const iepInput = tr.querySelector('[data-field="is_iep_excluded"]');
+    if (nameInput) item.full_name = nameInput.value.trim() || item.full_name;
+    if (shiftSelect) item.default_shift = Number(shiftSelect.value);
+    if (iepInput) item.is_iep_excluded = iepInput.checked;
   }
 }
 
-function readRowValues(tr, studentId) {
+function updateReorderBarUI() {
+  if (state.orderDirty) {
+    els.reorderBar.className = 'flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-amber-50 border-2 border-amber-300 transition-colors';
+    els.reorderStatusText.className = 'text-xs font-extrabold text-amber-900';
+    els.reorderStatusText.textContent = 'ลำดับรายชื่อมีการเปลี่ยนแปลง! คลิก "บันทึกลำดับเลขที่ใหม่" เพื่ออัปเดตเลขที่และประวัติคะแนนให้ตรงกัน';
+  } else {
+    els.reorderBar.className = 'flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-200 transition-colors';
+    els.reorderStatusText.className = 'text-xs font-bold text-slate-700';
+    els.reorderStatusText.textContent = 'ใช้ปุ่มลูกศรขึ้น/ลงในตารางเพื่อสลับลำดับเลขที่ แล้วกดบันทึก';
+  }
+}
+
+function moveStudentRow(index, delta) {
+  const targetIdx = index + delta;
+  if (targetIdx < 0 || targetIdx >= state.students.length) return;
+  syncInputsIntoState();
+  const [moved] = state.students.splice(index, 1);
+  state.students.splice(targetIdx, 0, moved);
+  state.orderDirty = true;
+  renderStudentsTable();
+  updateReorderBarUI();
+}
+
+function renderStudentsTable() {
+  els.studentsTbody.innerHTML = '';
+  const total = state.students.length;
+
+  if (total === 0) {
+    els.studentsTbody.innerHTML = '<tr><td colspan="7" class="py-8 text-center text-slate-400 text-sm">ยังไม่มีรายชื่อนักเรียนในระบบ</td></tr>';
+    return;
+  }
+
+  state.students.forEach((st, idx) => {
+    const proposedNo = idx + 1;
+    const isOrderChanged = state.orderDirty && proposedNo !== Number(st.student_no);
+    const tr = document.createElement('tr');
+    tr.dataset.studentId = st.student_id;
+    tr.className = isOrderChanged ? 'bg-amber-50/50 hover:bg-amber-50' : 'hover:bg-slate-50';
+
+    tr.innerHTML = `
+      <td class="py-2 px-2 whitespace-nowrap">
+        <div class="inline-flex items-center gap-0.5">
+          <button type="button" data-move-up="${idx}" ${idx === 0 ? 'disabled' : ''} title="เลื่อนขึ้น" class="p-1 rounded-lg border border-slate-200 bg-white hover:bg-indigo-50 hover:border-indigo-300 text-slate-600 hover:text-indigo-700 disabled:opacity-30 disabled:cursor-not-allowed transition">
+            ${icon('arrowUp', 'w-3.5 h-3.5')}
+          </button>
+          <button type="button" data-move-down="${idx}" ${idx === total - 1 ? 'disabled' : ''} title="เลื่อนลง" class="p-1 rounded-lg border border-slate-200 bg-white hover:bg-indigo-50 hover:border-indigo-300 text-slate-600 hover:text-indigo-700 disabled:opacity-30 disabled:cursor-not-allowed transition">
+            ${icon('arrowDown', 'w-3.5 h-3.5')}
+          </button>
+        </div>
+      </td>
+      <td class="py-2 px-2 font-extrabold whitespace-nowrap">
+        ${
+          isOrderChanged
+            ? `<span class="text-slate-400 line-through text-xs mr-1">${escapeHtml(st.student_no)}</span><span class="text-indigo-700">${proposedNo}</span>`
+            : `<span class="text-slate-700">${escapeHtml(st.student_no)}</span>`
+        }
+      </td>
+      <td class="py-2 px-2"><span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600">${escapeHtml(st.student_id)}</span></td>
+      <td class="py-2 px-2">
+        <input type="text" data-field="full_name" value="${escapeHtml(st.full_name)}" class="w-full min-w-[170px] px-2.5 py-1.5 rounded-lg border border-slate-300 text-sm font-medium focus:border-blue-500 outline-none" />
+      </td>
+      <td class="py-2 px-2">
+        <select data-field="default_shift" class="px-2 py-1.5 rounded-lg border border-slate-300 text-xs font-bold bg-white outline-none">
+          <option value="1" ${Number(st.default_shift) === 1 ? 'selected' : ''}>ผลัด 1</option>
+          <option value="2" ${Number(st.default_shift) === 2 ? 'selected' : ''}>ผลัด 2</option>
+        </select>
+      </td>
+      <td class="py-2 px-2 text-center">
+        <input type="checkbox" data-field="is_iep_excluded" ${st.is_iep_excluded ? 'checked' : ''} class="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 cursor-pointer" />
+      </td>
+      <td class="py-2 px-2 text-right whitespace-nowrap">
+        <div class="inline-flex items-center gap-1">
+          <button type="button" data-save-row="${escapeHtml(st.student_id)}" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-600 hover:text-white text-slate-700 font-bold text-xs transition">
+            บันทึก
+          </button>
+          <button type="button" data-delete-student="${escapeHtml(st.student_id)}" title="ลบนักเรียน" class="inline-flex items-center justify-center p-1.5 rounded-lg bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-200 transition">
+            ${icon('trash2', 'w-3.5 h-3.5')}
+          </button>
+        </div>
+      </td>
+    `;
+
+    tr.querySelector('[data-move-up]').addEventListener('click', () => moveStudentRow(idx, -1));
+    tr.querySelector('[data-move-down]').addEventListener('click', () => moveStudentRow(idx, 1));
+    tr.querySelector('[data-save-row]').addEventListener('click', () => saveSingleStudentRow(tr, st.student_id));
+    tr.querySelector('[data-delete-student]').addEventListener('click', () => openDeleteStudentModal(st));
+    els.studentsTbody.appendChild(tr);
+  });
+}
+
+function readRowEditableFields(tr, studentId) {
   const original = state.students.find((s) => s.student_id === studentId);
   return {
-    student_id: studentId,
-    student_no: original.student_no,
     full_name: tr.querySelector('[data-field="full_name"]').value.trim() || original.full_name,
     default_shift: Number(tr.querySelector('[data-field="default_shift"]').value),
     is_iep_excluded: tr.querySelector('[data-field="is_iep_excluded"]').checked,
@@ -660,24 +781,21 @@ function readRowValues(tr, studentId) {
 
 async function saveSingleStudentRow(tr, studentId) {
   const btn = tr.querySelector('[data-save-row]');
-  const rowData = readRowValues(tr, studentId);
+  const editable = readRowEditableFields(tr, studentId);
+  const original = state.students.find((s) => s.student_id === studentId);
   btn.disabled = true;
   btn.textContent = '...';
 
   try {
     const { error } = await supabase
       .from('students')
-      .update({
-        full_name: rowData.full_name,
-        default_shift: rowData.default_shift,
-        is_iep_excluded: rowData.is_iep_excluded,
-      })
+      .update(editable)
       .eq('student_id', studentId);
 
     if (error) throw error;
     const idx = state.students.findIndex((s) => s.student_id === studentId);
-    if (idx !== -1) state.students[idx] = rowData;
-    showBanner(els.studentsSaveFeedback, 'success', `บันทึกข้อมูลเลขที่ ${rowData.student_no} (${rowData.full_name}) เรียบร้อยแล้ว`);
+    if (idx !== -1) state.students[idx] = { ...state.students[idx], ...editable };
+    showBanner(els.studentsSaveFeedback, 'success', `บันทึกข้อมูลเลขที่ ${original.student_no} (${editable.full_name}) เรียบร้อยแล้ว`);
     renderLiveMonitor();
   } catch (err) {
     showBanner(els.studentsSaveFeedback, 'error', `บันทึกไม่สำเร็จ: ${err.message}`);
@@ -689,23 +807,142 @@ async function saveSingleStudentRow(tr, studentId) {
 
 async function saveAllStudents() {
   const rows = Array.from(els.studentsTbody.querySelectorAll('tr[data-student-id]'));
-  const updates = rows.map((tr) => readRowValues(tr, tr.dataset.studentId));
-  if (updates.length === 0) return;
+  if (rows.length === 0) return;
 
   els.btnSaveAllStudents.disabled = true;
   els.btnSaveAllStudents.innerHTML = `${icon('loader', 'w-4 h-4 animate-spin')}<span>กำลังบันทึก...</span>`;
 
   try {
-    const { error } = await supabase.from('students').upsert(updates, { onConflict: 'student_id' });
-    if (error) throw error;
-    state.students = updates;
-    showBanner(els.studentsSaveFeedback, 'success', `บันทึกรายชื่อนักเรียนทั้งหมด ${updates.length} คนเรียบร้อยแล้ว`);
+    // Update only editable fields (full_name, default_shift, is_iep_excluded); NEVER touch student_no
+    const tasks = rows.map((tr) => {
+      const studentId = tr.dataset.studentId;
+      const editable = readRowEditableFields(tr, studentId);
+      return supabase
+        .from('students')
+        .update(editable)
+        .eq('student_id', studentId)
+        .then(({ error }) => {
+          if (error) throw error;
+          const idx = state.students.findIndex((s) => s.student_id === studentId);
+          if (idx !== -1) state.students[idx] = { ...state.students[idx], ...editable };
+        });
+    });
+
+    await Promise.all(tasks);
+    showBanner(els.studentsSaveFeedback, 'success', `บันทึกรายชื่อนักเรียนทั้งหมด ${rows.length} คนเรียบร้อยแล้ว`);
     renderLiveMonitor();
   } catch (err) {
     showBanner(els.studentsSaveFeedback, 'error', `บันทึกทั้งหมดไม่สำเร็จ: ${err.message}`);
   } finally {
     els.btnSaveAllStudents.disabled = false;
     els.btnSaveAllStudents.innerHTML = `${icon('save', 'w-4 h-4')}<span>บันทึกทั้งหมด (Save All)</span>`;
+  }
+}
+
+async function handleAddStudent(e) {
+  e.preventDefault();
+  const fullName = els.inputNewStudentName.value.trim();
+  const defaultShift = Number(els.inputNewStudentShift.value);
+  const isIep = els.inputNewStudentIep.checked;
+
+  if (!fullName) {
+    showBanner(els.studentsSaveFeedback, 'error', 'กรุณากรอกชื่อ-นามสกุลนักเรียน');
+    return;
+  }
+
+  els.btnAddStudent.disabled = true;
+  els.btnAddStudent.innerHTML = `${icon('loader', 'w-4 h-4 animate-spin')}<span>กำลังเพิ่ม...</span>`;
+
+  try {
+    const { error } = await supabase.rpc('add_student', {
+      p_full_name: fullName,
+      p_default_shift: defaultShift,
+      p_is_iep_excluded: isIep,
+    });
+    if (error) throw error;
+
+    els.inputNewStudentName.value = '';
+    els.inputNewStudentIep.checked = false;
+    await loadStudents();
+    await loadMonitorLogs();
+    showBanner(els.studentsSaveFeedback, 'success', `เพิ่มนักเรียน "${fullName}" เข้าระบบเรียบร้อยแล้ว (รวม ${state.students.length} คน)`);
+  } catch (err) {
+    showBanner(els.studentsSaveFeedback, 'error', `เพิ่มนักเรียนไม่สำเร็จ: ${err.message}`);
+  } finally {
+    els.btnAddStudent.disabled = false;
+    els.btnAddStudent.innerHTML = `${icon('userPlus', 'w-4 h-4')}<span>เพิ่มนักเรียน</span>`;
+  }
+}
+
+async function handleSaveOrder() {
+  if (state.students.length === 0) return;
+  const studentIds = state.students.map((s) => s.student_id);
+  const rebalanceShifts = els.inputReorderRebalance.checked;
+
+  els.btnSaveOrder.disabled = true;
+  els.btnSaveOrder.innerHTML = `${icon('loader', 'w-4 h-4 animate-spin')}<span>กำลังจัดลำดับเลขที่...</span>`;
+
+  try {
+    const { error } = await supabase.rpc('reorder_students', {
+      p_student_ids: studentIds,
+      p_rebalance_shifts: rebalanceShifts,
+    });
+    if (error) throw error;
+
+    await loadStudents();
+    await loadMonitorLogs();
+    showBanner(els.studentsSaveFeedback, 'success', 'บันทึกลำดับเลขที่ใหม่และซิงค์ประวัติคะแนนเรียบร้อยแล้ว');
+  } catch (err) {
+    showBanner(els.studentsSaveFeedback, 'error', `บันทึกลำดับเลขที่ไม่สำเร็จ: ${err.message}`);
+  } finally {
+    els.btnSaveOrder.disabled = false;
+    els.btnSaveOrder.innerHTML = `${icon('check', 'w-4 h-4')}<span>บันทึกลำดับเลขที่ใหม่</span>`;
+  }
+}
+
+function openDeleteStudentModal(student) {
+  state.pendingDeleteStudent = student;
+  els.inputDeleteStudentRebalance.checked = true;
+  els.deleteStudentDesc.innerHTML = `
+    <p>ต้องการลบนักเรียนคนนี้ออกจากห้องเรียนใช่หรือไม่?</p>
+    <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs space-y-1">
+      <div><strong>เลขที่ปัจจุบัน:</strong> เลขที่ ${escapeHtml(student.student_no)}</div>
+      <div><strong>ชื่อ-นามสกุล:</strong> <strong class="text-slate-900">${escapeHtml(student.full_name)}</strong></div>
+      <div><strong>รหัสนักเรียน:</strong> <span class="font-mono text-slate-600">${escapeHtml(student.student_id)}</span></div>
+    </div>
+  `;
+  els.deleteStudentModal.classList.remove('hidden');
+}
+
+async function confirmDeleteStudent() {
+  if (!state.pendingDeleteStudent) return;
+  const target = state.pendingDeleteStudent;
+  const rebalance = els.inputDeleteStudentRebalance.checked;
+
+  els.btnConfirmDeleteStudent.disabled = true;
+  els.btnConfirmDeleteStudent.innerHTML = `${icon('loader', 'w-4 h-4 animate-spin')}<span>กำลังลบและปรับเลขที่...</span>`;
+
+  try {
+    const { error } = await supabase.rpc('delete_student_and_renumber', {
+      p_student_id: target.student_id,
+      p_rebalance_shifts: rebalance,
+    });
+    if (error) throw error;
+
+    els.deleteStudentModal.classList.add('hidden');
+    state.pendingDeleteStudent = null;
+    await loadStudents();
+    await loadSessions();
+    showBanner(
+      els.studentsSaveFeedback,
+      'success',
+      `ลบเลขที่ ${target.student_no} (${target.full_name}) และปรับเลขที่นักเรียนที่เหลือ (${state.students.length} คน) เรียบร้อยแล้ว`
+    );
+  } catch (err) {
+    alert(`ลบนักเรียนไม่สำเร็จ: ${err.message}`);
+  } finally {
+    els.btnConfirmDeleteStudent.disabled = false;
+    els.btnConfirmDeleteStudent.innerHTML = `${icon('trash2', 'w-4 h-4')}<span>ยืนยันลบนักเรียน</span>`;
   }
 }
 
@@ -732,7 +969,7 @@ function applyBulkNamesToInputs(names) {
     const input = rows[i].querySelector('[data-field="full_name"]');
     if (input) input.value = names[i];
   }
-  return count;
+  return { filled: count, totalRows: rows.length, pastedCount: names.length };
 }
 
 // ============================================================================
@@ -907,7 +1144,22 @@ function bindEvents() {
   });
   els.btnConfirmDeleteSession.addEventListener('click', confirmDeleteSession);
 
+  // Delete student modal
+  els.btnCancelDeleteStudent.addEventListener('click', () => {
+    state.pendingDeleteStudent = null;
+    els.deleteStudentModal.classList.add('hidden');
+  });
+  els.deleteStudentModal.addEventListener('click', (e) => {
+    if (e.target === els.deleteStudentModal) {
+      state.pendingDeleteStudent = null;
+      els.deleteStudentModal.classList.add('hidden');
+    }
+  });
+  els.btnConfirmDeleteStudent.addEventListener('click', confirmDeleteStudent);
+
   // Students manager
+  els.addStudentForm.addEventListener('submit', handleAddStudent);
+  els.btnSaveOrder.addEventListener('click', handleSaveOrder);
   els.btnSaveAllStudents.addEventListener('click', saveAllStudents);
 
   els.btnBulkPreview.addEventListener('click', () => {
@@ -916,8 +1168,9 @@ function bindEvents() {
       showBanner(els.bulkStatus, 'error', 'กรุณาวางรายชื่ออย่างน้อย 1 บรรทัด');
       return;
     }
-    const filled = applyBulkNamesToInputs(names);
-    showBanner(els.bulkStatus, 'info', `เติมรายชื่อลงตารางแล้ว ${filled} คน กรุณาตรวจสอบแล้วกด "บันทึกทั้งหมด"`);
+    const { filled, totalRows, pastedCount } = applyBulkNamesToInputs(names);
+    const extraNote = pastedCount > totalRows ? ` (เกินจำนวนปัจจุบัน ${pastedCount - totalRows} รายชื่อ)` : '';
+    showBanner(els.bulkStatus, 'info', `เติมรายชื่อลงตารางแล้ว ${filled} / ${totalRows} คน${extraNote} กรุณาตรวจสอบแล้วกด "บันทึกทั้งหมด"`);
   });
 
   els.btnBulkApply.addEventListener('click', async () => {
@@ -926,9 +1179,9 @@ function bindEvents() {
       showBanner(els.bulkStatus, 'error', 'กรุณาวางรายชื่ออย่างน้อย 1 บรรทัด');
       return;
     }
-    const filled = applyBulkNamesToInputs(names);
+    const { filled, totalRows } = applyBulkNamesToInputs(names);
     await saveAllStudents();
-    showBanner(els.bulkStatus, 'success', `อัปเดตรายชื่อ ${filled} คนลงฐานข้อมูลเรียบร้อยแล้ว`);
+    showBanner(els.bulkStatus, 'success', `อัปเดตรายชื่อ ${filled} / ${totalRows} คนลงฐานข้อมูลเรียบร้อยแล้ว`);
   });
 }
 

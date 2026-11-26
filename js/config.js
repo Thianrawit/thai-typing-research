@@ -231,3 +231,38 @@ export function escapeHtml(str) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }
+
+export function resolveStudentShift(student, totalStudents = 0) {
+  if (student && (Number(student.default_shift) === 1 || Number(student.default_shift) === 2)) {
+    return Number(student.default_shift);
+  }
+  const half = Math.ceil(Math.max(1, totalStudents) / 2);
+  return Number(student?.student_no || 1) <= half ? 1 : 2;
+}
+
+export function getShiftGroupMeta(students, shiftNo) {
+  const total = Array.isArray(students) ? students.length : 0;
+  const list = (students || [])
+    .filter((s) => resolveStudentShift(s, total) === shiftNo)
+    .sort((a, b) => Number(a.student_no) - Number(b.student_no));
+
+  if (list.length === 0) {
+    return {
+      list,
+      count: 0,
+      rangeLabel: 'ไม่มีนักเรียน',
+      title: `ผลัดที่ ${shiftNo} (0 คน)`,
+    };
+  }
+
+  const minNo = Number(list[0].student_no);
+  const maxNo = Number(list[list.length - 1].student_no);
+  const rangeLabel = minNo === maxNo ? `เลขที่ ${minNo}` : `เลขที่ ${minNo}–${maxNo}`;
+
+  return {
+    list,
+    count: list.length,
+    rangeLabel,
+    title: `ผลัดที่ ${shiftNo} (${rangeLabel})`,
+  };
+}

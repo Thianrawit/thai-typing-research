@@ -8,10 +8,17 @@ import {
   formatNumber,
   roundTo,
   escapeHtml,
+  resolveStudentShift,
+  getShiftGroupMeta,
 } from './config.js';
 import { soundEngine } from './sound.js';
 import { getWordsForSession } from './words.js';
-import { KedmaneeKeyboard } from './keyboard.js';
+import {
+  KedmaneeKeyboard,
+  KEDMANEE_CHAR_MAP,
+  KEDMANEE_CODE_MAP,
+  resolveKedmaneeChar,
+} from './keyboard.js';
 import { icon } from './icons.js';
 
 const PENDING_LOGS_KEY = 'thai_typing_pending_logs';
@@ -23,7 +30,7 @@ const IGNORED_KEYS = new Set([
   'Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Tab', 'Escape',
   'Backspace', 'Delete', 'Enter', 'Insert', 'Home', 'End', 'PageUp', 'PageDown',
   'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ContextMenu', 'NumLock',
-  'ScrollLock', 'Pause', 'PrintScreen', 'Dead', 'Process', 'Unidentified',
+  'ScrollLock', 'Pause', 'PrintScreen', 'Dead',
 ]);
 
 // ============================================================================
@@ -102,6 +109,8 @@ const els = {
   rosterProgressLabel: document.getElementById('roster-progress-label'),
   rosterRefreshBtn: document.getElementById('roster-refresh-btn'),
   rosterBackPinBtn: document.getElementById('roster-back-pin-btn'),
+  shift1Title: document.getElementById('shift1-title'),
+  shift2Title: document.getElementById('shift2-title'),
   shift1Grid: document.getElementById('shift1-grid'),
   shift2Grid: document.getElementById('shift2-grid'),
   shift1Count: document.getElementById('shift1-count'),
@@ -122,8 +131,10 @@ const els = {
   hudWpm: document.getElementById('hud-wpm'),
   hudAcc: document.getElementById('hud-acc'),
   hudCombo: document.getElementById('hud-combo'),
+  hudDebugBtn: document.getElementById('hud-debug-btn'),
   hudMuteBtn: document.getElementById('hud-mute-btn'),
   langWarningBanner: document.getElementById('lang-warning-banner'),
+  capsWarningBanner: document.getElementById('caps-warning-banner'),
   guideModeBadge: document.getElementById('guide-mode-badge'),
   wordCard: document.getElementById('word-card'),
   currentWordDisplay: document.getElementById('current-word-display'),
@@ -131,6 +142,9 @@ const els = {
   nextWordsPreview: document.getElementById('next-words-preview'),
   startPromptHint: document.getElementById('start-prompt-hint'),
   keyboardContainer: document.getElementById('virtual-keyboard-container'),
+  keyDebugBar: document.getElementById('key-debug-bar'),
+  keyDebugContent: document.getElementById('key-debug-content'),
+  keyDebugHistory: document.getElementById('key-debug-history'),
 
   // Screen 4
   summaryStars: document.getElementById('summary-stars'),
@@ -184,7 +198,10 @@ const state = {
   weakKeys: {},
 
   langBannerTimer: null,
+  capsBannerTimer: null,
   shakeTimer: null,
+  debugBarVisible: false,
+  debugHistory: [],
 
   // Summary / Logout state
   lastPayload: null,
@@ -398,16 +415,22 @@ function renderRoster() {
   els.rosterProgressLabel.innerHTML = `${icon('checkCircle', 'w-3.5 h-3.5')}<span>ส่งแล้ว ${completedTotal} / ${students.length} คน</span>`;
   els.rosterStageTitle.textContent = stageMeta.title;
 
-  const shift1 = students.filter((s) => (s.default_shift ?? (s.student_no <= 11 ? 1 : 2)) === 1);
-  const shift2 = students.filter((s) => (s.default_shift ?? (s.student_no <= 11 ? 1 : 2)) === 2);
+  const shift1Meta = getShiftGroupMeta(students, 1);
+  const shift2Meta = getShiftGroupMeta(students, 2);
 
-  const s1Done = shift1.filter((s) => s.has_completed).length;
-  const s2Done = shift2.filter((s) => s.has_completed).length;
-  els.shift1Count.textContent = `${s1Done}/${shift1.length} คน`;
-  els.shift2Count.textContent = `${s2Done}/${shift2.length} คน`;
+  const s1Done = shift1Meta.list.filter((s) => s.has_completed).length;
+  const s2Done = shift2Meta.list.filter((s) => s.has_completed).length;
+  els.shift1Title.textContent = shift1Meta.title;
+  els.shift2Title.textContent = shift2Meta.title;
+  els.shift1Count.textContent = `${s1Done}/${shift1Meta.count} คน`;
+  els.shift2Count.textContent = `${s2Done}/${shift2Meta.count} คน`;
 
   const renderList = (container, list) => {
     container.innerHTML = '';
+    if (list.length === 0) {
+      container.innerHTML = '<div class="text-center py-6 text-xs text-slate-400">ไม่มีรายชื่อนักเรียนในผลัดนี้</div>';
+      return;
+    }
     for (const student of list) {
       const btn = document.createElement('button');
       btn.type = 'button';
@@ -438,13 +461,13 @@ function renderRoster() {
     }
   };
 
-  renderList(els.shift1Grid, shift1);
-  renderList(els.shift2Grid, shift2);
+  renderList(els.shift1Grid, shift1Meta.list);
+  renderList(els.shift2Grid, shift2Meta.list);
 }
 
 function openConfirmStudentModal(student) {
   state.pendingStudent = student;
-  const shiftNo = student.default_shift ?? (student.student_no <= 11 ? 1 : 2);
+  const shiftNo = resolveStudentShift(student, state.students.length);
   els.confirmStudentNo.textContent = String(student.student_no);
   els.confirmStudentName.textContent = `ยืนยันตัวตน: เลขที่ ${student.student_no} — ${student.full_name}`;
   els.confirmStudentShift.textContent = `ผลัดที่ ${shiftNo} • เครื่อง ${getDeviceTag()}`;
@@ -511,6 +534,8 @@ function startGameplay(student) {
   state.maxCombo = 0;
   state.engLangWarnings = 0;
   state.weakKeys = {};
+  state.debugHistory = [];
+  renderKeyDebugHistory();
 
   // Populate HUD
   els.hudStudentNo.textContent = String(student.student_no);
@@ -525,8 +550,9 @@ function startGameplay(student) {
   els.hudCombo.innerHTML = `<span>0</span>${icon('flame', 'w-4 h-4 text-orange-500')}`;
   updateMuteButtonUI();
 
-  // Guide mode badge
+  // Guide mode badge & warning reset
   els.langWarningBanner.classList.add('hidden');
+  els.capsWarningBanner.classList.add('hidden');
   if (session.mode === 'PRETEST' || session.mode === 'POSTTEST') {
     els.guideModeBadge.innerHTML = `${icon('lock', 'w-3.5 h-3.5')}<span>โหมดทดสอบ: ปิดไฟนำทาง</span>`;
     els.guideModeBadge.className = 'inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-700 border border-rose-200';
@@ -637,11 +663,23 @@ function startCountdownTimer() {
   }, 150);
 }
 
+function restoreGuideBadgeIfNeeded() {
+  if (
+    els.langWarningBanner.classList.contains('hidden') &&
+    els.capsWarningBanner.classList.contains('hidden') &&
+    state.session &&
+    (state.session.mode !== 'PRACTICE' || getEffectiveGuideMode(state.session) === 'ON_ERROR')
+  ) {
+    els.guideModeBadge.classList.remove('hidden');
+  }
+}
+
 function triggerLanguageWarning() {
   state.engLangWarnings += 1;
   soundEngine.playError();
 
   els.guideModeBadge.classList.add('hidden');
+  els.capsWarningBanner.classList.add('hidden');
   els.langWarningBanner.classList.remove('hidden', 'animate-lang-banner');
   void els.langWarningBanner.offsetWidth;
   els.langWarningBanner.classList.add('animate-lang-banner');
@@ -649,10 +687,92 @@ function triggerLanguageWarning() {
   clearTimeout(state.langBannerTimer);
   state.langBannerTimer = setTimeout(() => {
     els.langWarningBanner.classList.add('hidden');
-    if (state.session && (state.session.mode !== 'PRACTICE' || getEffectiveGuideMode(state.session) === 'ON_ERROR')) {
-      els.guideModeBadge.classList.remove('hidden');
-    }
+    restoreGuideBadgeIfNeeded();
   }, 3200);
+}
+
+function showCapsLockWarning(autoHide = false) {
+  els.guideModeBadge.classList.add('hidden');
+  els.langWarningBanner.classList.add('hidden');
+  els.capsWarningBanner.classList.remove('hidden', 'animate-lang-banner');
+  void els.capsWarningBanner.offsetWidth;
+  els.capsWarningBanner.classList.add('animate-lang-banner');
+
+  clearTimeout(state.capsBannerTimer);
+  if (autoHide) {
+    state.capsBannerTimer = setTimeout(() => {
+      els.capsWarningBanner.classList.add('hidden');
+      restoreGuideBadgeIfNeeded();
+    }, 4000);
+  }
+}
+
+function hideCapsLockWarning() {
+  clearTimeout(state.capsBannerTimer);
+  if (!els.capsWarningBanner.classList.contains('hidden')) {
+    els.capsWarningBanner.classList.add('hidden');
+    restoreGuideBadgeIfNeeded();
+  }
+}
+
+function updateDebugBtnUI() {
+  if (!els.hudDebugBtn) return;
+  els.hudDebugBtn.className = state.debugBarVisible
+    ? 'inline-flex items-center gap-1.5 h-10 px-2.5 rounded-xl bg-slate-900 text-sky-300 text-xs font-bold shadow-xs transition'
+    : 'inline-flex items-center gap-1.5 h-10 px-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold transition';
+}
+
+function toggleKeyDebugger() {
+  state.debugBarVisible = !state.debugBarVisible;
+  els.keyDebugBar.classList.toggle('hidden', !state.debugBarVisible);
+  updateDebugBtnUI();
+  if (state.debugBarVisible) {
+    renderKeyDebugHistory();
+  }
+}
+
+function renderKeyDebugHistory() {
+  if (!els.keyDebugHistory) return;
+  if (state.debugHistory.length === 0) {
+    els.keyDebugHistory.innerHTML = '<span>ล่าสุด 5 ปุ่ม: -</span>';
+    return;
+  }
+  const pills = state.debugHistory
+    .map(
+      (item, idx) =>
+        `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-800 border ${idx === 0 ? 'border-sky-500/70 text-slate-100' : 'border-slate-700 text-slate-400'}">${escapeHtml(item.code)}${item.shiftKey ? '+S' : ''}:${escapeHtml(JSON.stringify(item.key))}${item.resolvedChar && item.resolvedChar !== item.key ? `(${escapeHtml(item.resolvedChar)})` : ''}</span>`
+    )
+    .join('');
+  els.keyDebugHistory.innerHTML = `<span class="shrink-0">ล่าสุด 5 ปุ่ม:</span>${pills}`;
+}
+
+function updateKeyDebugger(event, expectedChar, resolvedChar, capsLockOn) {
+  state.debugHistory.unshift({
+    key: event.key,
+    code: event.code,
+    shiftKey: Boolean(event.shiftKey),
+    capsLock: Boolean(capsLockOn),
+    isComposing: Boolean(event.isComposing),
+    resolvedChar: resolvedChar || '',
+    expectedChar: expectedChar || '',
+  });
+  if (state.debugHistory.length > 5) {
+    state.debugHistory.length = 5;
+  }
+
+  if (!state.debugBarVisible) return;
+  const expInfo = expectedChar ? KEDMANEE_CHAR_MAP.get(expectedChar) : null;
+  const expCode = expInfo ? `${expInfo.code}${expInfo.needsShift ? '+Shift' : ''}` : '-';
+  els.keyDebugContent.innerHTML = [
+    `<span>key=<strong class="text-amber-300">${escapeHtml(JSON.stringify(event.key))}</strong></span>`,
+    `<span>code=<strong class="text-sky-300">${escapeHtml(event.code)}</strong></span>`,
+    `<span>shiftKey=<strong class="${event.shiftKey ? 'text-emerald-300' : 'text-slate-400'}">${Boolean(event.shiftKey)}</strong></span>`,
+    `<span>capsLock=<strong class="${capsLockOn ? 'text-rose-400' : 'text-slate-400'}">${Boolean(capsLockOn)}</strong></span>`,
+    `<span>isComposing=<strong>${Boolean(event.isComposing)}</strong></span>`,
+    `<span>resolvedChar=<strong class="text-emerald-300">${escapeHtml(JSON.stringify(resolvedChar || ''))}</strong></span>`,
+    `<span>expectedChar=<strong class="text-white">${escapeHtml(JSON.stringify(expectedChar || ''))}</strong> (${escapeHtml(expCode)})</span>`,
+  ].join('');
+  renderKeyDebugHistory();
 }
 
 function triggerWordShake() {
@@ -677,34 +797,110 @@ function advanceWord() {
 }
 
 function handleGameKeydown(event) {
-  if (state.currentScreen !== 'game' || !state.isPlaying) return;
+  if (state.currentScreen !== 'game') return;
 
-  if (event.ctrlKey || event.altKey || event.metaKey) return;
-  if (event.key.startsWith('F') && event.key.length > 1) return;
-  if (IGNORED_KEYS.has(event.key)) {
-    if (event.key === 'Tab' || event.key === 'Backspace') event.preventDefault();
+  // Toggle built-in Live Key Debugger via (Ctrl + Alt + KeyD) OR F2 using e.code only (EN & TH safe, works before timer starts)
+  if ((event.ctrlKey && event.altKey && event.code === 'KeyD') || event.code === 'F2') {
+    event.preventDefault();
+    toggleKeyDebugger();
     return;
   }
-  if (event.key.length !== 1) return;
 
-  event.preventDefault();
+  if (!state.isPlaying) return;
 
   const expectedChar = state.currentChars[state.charIndex];
+  const capsLockOn = typeof event.getModifierState === 'function' && event.getModifierState('CapsLock');
+
+  // Update CapsLock visual indicator immediately on CapsLock key press
+  if (event.key === 'CapsLock') {
+    if (capsLockOn) showCapsLockWarning(false);
+    else hideCapsLockWarning();
+    updateKeyDebugger(event, expectedChar, '', capsLockOn);
+    return;
+  }
+
+  // Never block browser/system shortcuts (F5, F12, Ctrl+R, etc.)
+  if (event.ctrlKey || event.altKey || event.metaKey) return;
+  if (/^F\d+$/.test(event.key)) return;
+
+  // Ignore pure modifiers & Dead keys (do NOT block event.isComposing unless key === 'Dead')
+  if (event.key === 'Dead') {
+    updateKeyDebugger(event, expectedChar, '', capsLockOn);
+    return;
+  }
+  if (IGNORED_KEYS.has(event.key)) {
+    if (event.key === 'Tab' || event.key === 'Backspace') event.preventDefault();
+    updateKeyDebugger(event, expectedChar, '', capsLockOn);
+    return;
+  }
+
+  const physicalEntry = KEDMANEE_CODE_MAP.get(event.code);
+  const expectedKeyInfo = expectedChar ? KEDMANEE_CHAR_MAP.get(expectedChar) : null;
+
+  // Prevent browser quick-find / scrolling / Shift+Key hijacking on active typing keys
+  if (
+    physicalEntry ||
+    event.shiftKey ||
+    event.code === 'Space' ||
+    event.code === 'Slash' ||
+    event.code === 'Quote'
+  ) {
+    event.preventDefault();
+  }
+
   if (!expectedChar) return;
 
-  // Language Guard: Latin key when Thai character is expected (NO accuracy penalty)
+  const isRawProcessOrEmpty =
+    !event.key || event.key === 'Process' || event.key === 'Unidentified';
+  const isLatinKey = /^[a-zA-Z]$/.test(event.key);
   const isExpectedThai = /[\u0E00-\u0E7F]/.test(expectedChar);
-  if (isExpectedThai && /^[a-zA-Z]$/.test(event.key)) {
+
+  // Language Guard: Latin letter when Thai character is expected (NO accuracy penalty)
+  if (isExpectedThai && isLatinKey) {
+    updateKeyDebugger(event, expectedChar, event.key, capsLockOn);
     triggerLanguageWarning();
     return;
   }
 
+  // CapsLock Guard: detect inverted Shift layer on the exact target key without penalizing accuracy
+  const matchesTargetPhysicalAndShift =
+    Boolean(expectedKeyInfo) &&
+    event.code === expectedKeyInfo.code &&
+    Boolean(event.shiftKey) === expectedKeyInfo.needsShift;
+
+  if (capsLockOn && matchesTargetPhysicalAndShift && event.key !== expectedChar && !isRawProcessOrEmpty) {
+    updateKeyDebugger(event, expectedChar, event.key, capsLockOn);
+    soundEngine.playError();
+    showCapsLockWarning(false);
+    return;
+  }
+
+  if (capsLockOn) {
+    showCapsLockWarning(true);
+  } else {
+    hideCapsLockWarning();
+  }
+
+  // Bulletproof Thai Shifted Character Resolution:
+  // 1) Normal event.key
+  // 2) Fallback via physical event.code + event.shiftKey in KEDMANEE_ROWS when:
+  //    - event.key is 'Process' / 'Unidentified' / empty, OR
+  //    - physical code & shift match expectedChar AND event.key is NOT a Latin letter
+  let typedChar = event.key;
+  if (isRawProcessOrEmpty && physicalEntry) {
+    typedChar = resolveKedmaneeChar(event.code, Boolean(event.shiftKey));
+  } else if (typedChar !== expectedChar && matchesTargetPhysicalAndShift && !isLatinKey) {
+    typedChar = resolveKedmaneeChar(event.code, Boolean(event.shiftKey));
+  }
+
+  updateKeyDebugger(event, expectedChar, typedChar, capsLockOn);
+
+  if (!typedChar || typedChar.length !== 1) return;
+
   if (!els.langWarningBanner.classList.contains('hidden')) {
     clearTimeout(state.langBannerTimer);
     els.langWarningBanner.classList.add('hidden');
-    if (state.session.mode !== 'PRACTICE' || getEffectiveGuideMode(state.session) === 'ON_ERROR') {
-      els.guideModeBadge.classList.remove('hidden');
-    }
+    restoreGuideBadgeIfNeeded();
   }
 
   if (!state.timerStarted) {
@@ -713,7 +909,7 @@ function handleGameKeydown(event) {
 
   state.totalKeystrokes += 1;
 
-  if (event.key === expectedChar) {
+  if (typedChar === expectedChar) {
     state.correctChars += 1;
     state.currentCombo += 1;
     if (state.currentCombo > state.maxCombo) {
@@ -776,7 +972,7 @@ function buildSubmissionPayload(actualDurationSec) {
   const netWpmRaw = Math.max(0, grossWpmRaw - (state.errorKeystrokes / durationMin));
   const accuracyPctRaw = state.totalKeystrokes > 0 ? (state.correctChars / state.totalKeystrokes) * 100 : 0;
 
-  const shiftNo = state.selectedStudent.default_shift ?? (state.selectedStudent.student_no <= 11 ? 1 : 2);
+  const shiftNo = resolveStudentShift(state.selectedStudent, state.students.length);
 
   return {
     p_pin: state.pin,
@@ -1035,6 +1231,11 @@ function bindEvents() {
   els.confirmStartBtn.addEventListener('click', () => {
     if (!state.pendingStudent) return;
     startGameplay(state.pendingStudent);
+  });
+
+  els.hudDebugBtn.addEventListener('click', () => {
+    toggleKeyDebugger();
+    els.hudDebugBtn.blur();
   });
 
   els.hudMuteBtn.addEventListener('click', () => {

@@ -20,7 +20,26 @@
 
 ---
 
-## 2. Targeted Fixes Applied (Revision 3 — Thai Combining-Mark Hardening)
+## 2. Targeted Upgrades Applied (Revision 4 — Shifted Key Hardening, Dynamic Roster RPCs & Zero Hardcoded Counts)
+
+1. **Upgrade 1 — Bulletproof Thai Shifted Key Handling, CapsLock Guard & Live Key Debugger (`js/keyboard.js`, `js/game.js`, `index.html`, `js/icons.js`):**
+   - Exported `KEDMANEE_CODE_MAP` and `resolveKedmaneeChar(eventCode, shiftKey)` from `js/keyboard.js`.
+   - Removed `'Process'` and `'Unidentified'` from `IGNORED_KEYS`; `keydown` is never blocked on `event.isComposing` unless `event.key === 'Dead'`.
+   - Added physical `event.code` + `event.shiftKey` resolution fallback when `event.key` is `'Process'`/`'Unidentified'`/empty, OR when `event.code` and `event.shiftKey` match the expected Thai target key while `event.key` is not a Latin letter (`!/^[a-zA-Z]$/.test(event.key)`), fixing quirky Windows/Chrome `Shift+KeyF` (`โ`) and other shifted Thai keys without breaking the English-language guard.
+   - Added `CapsLock` detection (`event.getModifierState('CapsLock')`) showing an amber `alertTriangle` SVG banner (`"ปุ่ม Caps Lock เปิดอยู่! กรุณากดปิด Caps Lock (ไม่งั้นปุ่มยกแคร่จะสลับด้าน)"`) without penalizing accuracy when the inverted shift layer of the target key is pressed.
+   - Prevented default browser actions on active typing / `Shift+Key` / `Space` / `Slash` / `Quote` while preserving `F5`, `F12`, `Ctrl+R`, and `Ctrl+Alt+D`.
+   - Added Live Key Debugger bar (`#key-debug-bar`) toggled via `(e.ctrlKey && e.altKey && e.code === 'KeyD') || e.code === 'F2'` (layout-independent `event.code`, works before timer starts) OR 1-click `"ตรวจปุ่ม"` SVG button (`#hud-debug-btn`) next to the Mute button in Screen 3 HUD, displaying live `key`, `code`, `shiftKey`, `capsLock`, `isComposing`, `resolvedChar`, `expectedChar`, plus a horizontal strip of the last 5 keydown events.
+2. **Upgrade 2 — Student Add / Reorder / Delete & Auto-Renumber RPCs (`admin.html`, `js/admin.js`):**
+   - Added compact Add Student form calling `add_student({ p_full_name, p_default_shift, p_is_iep_excluded })`.
+   - Added Move Up / Move Down SVG buttons per row + `"บันทึกลำดับเลขที่ใหม่"` button (with `"แบ่งผลัด 1 / ผลัด 2 ครึ่งต่อครึ่งอัตโนมัติ"` checkbox) calling `reorder_students({ p_student_ids, p_rebalance_shifts })`.
+   - Added Delete Student (`trash2` SVG) button per row opening `#delete-student-modal` with the exact renumbering warning and default-checked shift rebalance checkbox, calling `delete_student_and_renumber({ p_student_id, p_rebalance_shifts })` and immediately refreshing roster, live monitor, and session stats.
+   - Refactored `saveAllStudents()` to update only `{ full_name, default_shift, is_iep_excluded }` so `student_no` is never modified directly from client JS.
+   - Updated Bulk Paste helper to dynamically match the current roster size (`N`).
+3. **Upgrade 3 — Dynamic Roster Counts & Shift Ranges Everywhere (`js/config.js`, `index.html`, `js/game.js`, `admin.html`, `js/admin.js`, `dashboard.html`, `js/dashboard.js`):**
+   - Added shared `resolveStudentShift()` and `getShiftGroupMeta()` helpers in `js/config.js`.
+   - Removed all hardcoded `22`, `1–11`, and `12–22` labels/fallbacks across all 3 pages; shift titles (`ผลัดที่ 1 (เลขที่ min–max)`), counts, progress badges, dashboard KPIs, attendance denominators, Chart 2 subtitle/X-axis, and CSV exports now dynamically compute from live Supabase roster data.
+
+## 3. Previous Fixes (Revision 3 — Thai Combining-Mark Hardening)
 
 - **Hardened Single-Text-Node Grapheme Rendering & `Noto Sans Thai` OpenType Shaping (`index.html`, `css/style.css`, `js/game.js`):**
   - Loaded `Noto Sans Thai` (`wght@500;600;700`) via Google Fonts in `index.html` and removed `font-bold` / `flex` blockification / any `tracking-*` utility class from `#current-word-display`.

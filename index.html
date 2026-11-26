@@ -90,7 +90,7 @@
   </section>
 
   <!-- ======================================================================
-       SCREEN 2: STUDENT ROSTER SELECTION (22 STUDENTS / 2 SHIFTS FULL WIDTH)
+       SCREEN 2: STUDENT ROSTER SELECTION (DYNAMIC 2-SHIFT FULL WIDTH)
        ====================================================================== -->
   <section id="screen-roster" class="hidden min-h-screen bg-slate-50 p-4 md:p-6">
     <div class="max-w-6xl mx-auto space-y-5">
@@ -100,7 +100,7 @@
           <div class="flex flex-wrap items-center gap-2">
             <span id="roster-session-badge" class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800">สัปดาห์ที่ 1 • ฝึกทักษะ</span>
             <span id="roster-duration-label" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700"></span>
-            <span id="roster-progress-label" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">ส่งแล้ว 0 / 22 คน</span>
+            <span id="roster-progress-label" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">ส่งแล้ว 0 / 0 คน</span>
           </div>
           <h2 id="roster-stage-title" class="text-xl md:text-2xl font-extrabold text-slate-900">เลือกชื่อของตนเองเพื่อเริ่มฝึกพิมพ์</h2>
         </div>
@@ -125,11 +125,11 @@
             <div class="flex items-center gap-2.5">
               <span class="w-8 h-8 rounded-xl bg-sky-100 text-sky-700 font-extrabold flex items-center justify-center text-sm shrink-0">1</span>
               <div>
-                <h3 class="font-extrabold text-slate-900 text-lg">ผลัดที่ 1 (เลขที่ 1–11)</h3>
+                <h3 id="shift1-title" class="font-extrabold text-slate-900 text-lg">ผลัดที่ 1</h3>
                 <p class="text-xs text-slate-500">แตะที่ชื่อของตนเองเพื่อเริ่มรอบการฝึก</p>
               </div>
             </div>
-            <span id="shift1-count" class="text-xs font-bold px-2.5 py-1 rounded-full bg-sky-50 text-sky-700">0/11</span>
+            <span id="shift1-count" class="text-xs font-bold px-2.5 py-1 rounded-full bg-sky-50 text-sky-700">0/0</span>
           </div>
           <div id="shift1-grid" class="grid grid-cols-1 gap-2"></div>
         </div>
@@ -140,11 +140,11 @@
             <div class="flex items-center gap-2.5">
               <span class="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-700 font-extrabold flex items-center justify-center text-sm shrink-0">2</span>
               <div>
-                <h3 class="font-extrabold text-slate-900 text-lg">ผลัดที่ 2 (เลขที่ 12–22)</h3>
+                <h3 id="shift2-title" class="font-extrabold text-slate-900 text-lg">ผลัดที่ 2</h3>
                 <p class="text-xs text-slate-500">แตะที่ชื่อของตนเองเพื่อเริ่มรอบการฝึก</p>
               </div>
             </div>
-            <span id="shift2-count" class="text-xs font-bold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700">0/11</span>
+            <span id="shift2-count" class="text-xs font-bold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700">0/0</span>
           </div>
           <div id="shift2-grid" class="grid grid-cols-1 gap-2"></div>
         </div>
@@ -196,6 +196,12 @@
             </div>
           </div>
 
+          <!-- Key Debugger Toggle -->
+          <button id="hud-debug-btn" type="button" title="เปิด/ปิดแถบตรวจปุ่ม (F2 หรือ Ctrl+Alt+D)" class="inline-flex items-center gap-1.5 h-10 px-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold transition">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.001M10 8h.001M14 8h.001M18 8h.001M8 12h.001M12 12h.001M16 12h.001M7 16h10"/></svg>
+            <span class="hidden md:inline">ตรวจปุ่ม</span>
+          </button>
+
           <!-- Mute Toggle -->
           <button id="hud-mute-btn" type="button" title="เปิด/ปิดเสียง" class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
@@ -206,11 +212,15 @@
 
     <!-- Main Gameplay Workspace -->
     <main class="flex-1 min-h-0 flex flex-col justify-between max-w-6xl w-full mx-auto px-3 md:px-5 py-2 gap-2">
-      <!-- Language Warning Banner Slot (Fixed Height -> Zero Layout Shift) -->
+      <!-- Warning Banner Slot (Language / CapsLock / Guide Mode — Fixed Height -> Zero Layout Shift) -->
       <div class="shrink-0 h-9 flex items-center justify-center">
         <div id="lang-warning-banner" class="hidden w-full max-w-2xl inline-flex items-center justify-center gap-2 text-center px-4 py-1.5 rounded-xl bg-amber-300 border-2 border-amber-500 text-slate-950 font-extrabold text-sm md:text-base shadow-md">
           <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-          <span>ลืมเปลี่ยนภาษา! กดปุ่มตัวหนอน (~) มุมซ้ายบน</span>
+          <span id="lang-warning-text">ลืมเปลี่ยนภาษา! กดปุ่มตัวหนอน (~) มุมซ้ายบน</span>
+        </div>
+        <div id="caps-warning-banner" class="hidden w-full max-w-3xl inline-flex items-center justify-center gap-2 text-center px-4 py-1.5 rounded-xl bg-amber-100 border-2 border-amber-500 text-amber-950 font-extrabold text-xs md:text-sm shadow-sm">
+          <svg class="w-4 h-4 shrink-0 text-amber-700" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span>ปุ่ม Caps Lock เปิดอยู่! กรุณากดปิด Caps Lock (ไม่งั้นปุ่มยกแคร่จะสลับด้าน)</span>
         </div>
         <div id="guide-mode-badge" class="hidden inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-slate-200 text-slate-700"></div>
       </div>
@@ -234,8 +244,21 @@
       </div>
 
       <!-- Virtual Keyboard Zone -->
-      <div class="shrink-0 pb-1">
+      <div class="shrink-0 pb-1 space-y-1.5">
         <div id="virtual-keyboard-container"></div>
+        <!-- Built-in Live Key Debugger (Hidden by default; toggle with F2, Ctrl+Alt+D, or "ตรวจปุ่ม" button) -->
+        <div id="key-debug-bar" class="hidden max-w-[960px] mx-auto px-3 py-1.5 rounded-xl bg-slate-900 text-slate-100 font-mono text-[11px] space-y-1 shadow">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <span class="inline-flex items-center gap-1.5 text-sky-300 font-bold shrink-0">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+              <span>ตรวจปุ่ม (F2 / Ctrl+Alt+D)</span>
+            </span>
+            <div id="key-debug-content" class="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-slate-200">รอรับสัญญาณแป้นพิมพ์...</div>
+          </div>
+          <div id="key-debug-history" class="flex items-center gap-1.5 overflow-x-auto pt-1 border-t border-slate-700/80 text-[10px] text-slate-400 whitespace-nowrap">
+            <span>ล่าสุด 5 ปุ่ม: -</span>
+          </div>
+        </div>
       </div>
     </main>
   </section>

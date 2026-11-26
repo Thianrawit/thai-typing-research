@@ -4,6 +4,7 @@ import {
   formatNumber,
   roundTo,
   escapeHtml,
+  resolveStudentShift,
 } from './config.js';
 import { icon } from './icons.js';
 
@@ -278,7 +279,7 @@ function computeAnalytics() {
       student_id: st.student_id,
       student_no: st.student_no,
       full_name: st.full_name,
-      default_shift: st.default_shift ?? (st.student_no <= 11 ? 1 : 2),
+      default_shift: resolveStudentShift(st, state.students.length),
       is_iep_excluded: Boolean(st.is_iep_excluded),
       preWpm,
       avgPracticeWpm,
@@ -455,7 +456,14 @@ function renderCharts(data) {
   if (typeof window.Chart === 'undefined') return;
   const Chart = window.Chart;
   const compLabel = data.hasAnyActualPosttest ? 'Posttest Net WPM' : 'ฝึกครั้งล่าสุด Net WPM';
-  els.chartPrePostSubtitle.textContent = `Pretest Net WPM เทียบกับ ${compLabel}`;
+  const byNo = [...data.studentSummaries].sort((a, b) => a.student_no - b.student_no);
+  const rangeSuffix =
+    byNo.length === 0
+      ? ''
+      : byNo.length === 1
+        ? ` (เลขที่ ${byNo[0].student_no})`
+        : ` (เลขที่ ${byNo[0].student_no}–${byNo[byNo.length - 1].student_no}, N=${byNo.length})`;
+  els.chartPrePostSubtitle.textContent = `Pretest Net WPM เทียบกับ ${compLabel}${rangeSuffix}`;
 
   destroyChart('learningCurve');
   state.charts.learningCurve = new Chart(els.canvasLearningCurve, {
@@ -514,7 +522,6 @@ function renderCharts(data) {
   });
 
   destroyChart('prePostStudent');
-  const byNo = [...data.studentSummaries].sort((a, b) => a.student_no - b.student_no);
   state.charts.prePostStudent = new Chart(els.canvasPrePostStudent, {
     type: 'bar',
     plugins: [whiteCanvasBgPlugin],
