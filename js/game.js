@@ -627,8 +627,7 @@ function updateLiveMetricsUI() {
   if (!state.timerStarted) return;
   const elapsedSec = Math.max(1, (performance.now() - state.startedAtMs) / 1000);
   const durationMin = Math.max(elapsedSec / 60, 1 / 60);
-  const grossWpm = (state.totalKeystrokes / 5) / durationMin;
-  const netWpm = Math.max(0, grossWpm - (state.errorKeystrokes / durationMin));
+  const netWpm = (state.correctChars / 5) / durationMin;
   const acc = state.totalKeystrokes > 0 ? (state.correctChars / state.totalKeystrokes) * 100 : 100;
 
   els.hudWpm.textContent = String(Math.round(netWpm));
@@ -967,9 +966,9 @@ function buildSubmissionPayload(actualDurationSec) {
   const durationMin = Math.max(durationActualSec / 60, 1 / 60);
 
   const grossCpmRaw = state.totalKeystrokes / durationMin;
-  const netCpmRaw = Math.max(0, (state.totalKeystrokes - state.errorKeystrokes) / durationMin);
+  const netCpmRaw = state.correctChars / durationMin;
   const grossWpmRaw = (state.totalKeystrokes / 5) / durationMin;
-  const netWpmRaw = Math.max(0, grossWpmRaw - (state.errorKeystrokes / durationMin));
+  const netWpmRaw = (state.correctChars / 5) / durationMin;
   const accuracyPctRaw = state.totalKeystrokes > 0 ? (state.correctChars / state.totalKeystrokes) * 100 : 0;
 
   const shiftNo = resolveStudentShift(state.selectedStudent, state.students.length);

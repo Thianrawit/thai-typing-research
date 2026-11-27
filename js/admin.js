@@ -8,19 +8,21 @@ import {
   getShiftGroupMeta,
 } from './config.js';
 import { icon } from './icons.js';
+import { initResearchInfoModal, openResearchInfoModal } from './research-info.js';
 
 const els = {
   // Views
   authView: document.getElementById('admin-auth-view'),
   mainView: document.getElementById('admin-main-view'),
 
-  // Auth
+  // Auth & Nav
   loginForm: document.getElementById('admin-login-form'),
   emailInput: document.getElementById('admin-email'),
   passwordInput: document.getElementById('admin-password'),
   loginBtn: document.getElementById('admin-login-btn'),
   loginError: document.getElementById('admin-login-error'),
   userEmail: document.getElementById('admin-user-email'),
+  btnResearchInfo: document.getElementById('btn-research-info'),
   logoutBtn: document.getElementById('admin-logout-btn'),
 
   // Tabs
@@ -1052,6 +1054,10 @@ function bindEvents() {
     }
   });
 
+  els.btnResearchInfo?.addEventListener('click', () => {
+    openResearchInfoModal('variables');
+  });
+
   els.logoutBtn.addEventListener('click', async () => {
     await supabase.auth.signOut();
     enterLoginView();
@@ -1186,6 +1192,7 @@ function bindEvents() {
 }
 
 async function init() {
+  initResearchInfoModal();
   populateStageDropdown();
   syncDurationPresetHighlight(300);
   bindEvents();

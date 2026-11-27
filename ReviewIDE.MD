@@ -20,7 +20,35 @@
 
 ---
 
-## 2. Targeted Upgrades Applied (Revision 4 — Shifted Key Hardening, Dynamic Roster RPCs & Zero Hardcoded Counts)
+## 2. Dashboard Strict-Stop Diagnostic & Student Summary Upgrade (Revision 7)
+
+- **`js/icons.js`:** Added Lucide-style inline SVGs `eye`, `target`, `trendingUp`, `award`, and `fileSpreadsheet` (zero emojis across all files).
+- **Shared Research Info Modal (`dashboard.html`, `js/dashboard.js`):** Mounted `initResearchInfoModal()` and added `"ข้อมูลละเอียด"` (`bookOpen` SVG) button in the top navbar opening `openResearchInfoModal('formulas')`.
+- **Thai Combining-Mark Formatting:** Exported `formatThaiKeyLabel(ch)` prefixing Thai combining marks (`\u0E31`, `\u0E34-\u0E3A`, `\u0E47-\u0E4E`) with `◌` and mapping `' '` to `'Spacebar'` across Chart 3, Summary Table weak key column, and Student Summary Modal.
+- **4 Strict-Stop KPI Cards:** Upgraded to display (1) Net WPM & Net CPM (`Net WPM * 5`) with Mean/S.D./Median (Min–Max), (2) Accuracy % with Mean/S.D./Median (Min–Max), (3) Class Mean Gross WPM vs Net WPM & `Speed Loss = Gross WPM - Net WPM`, and (4) Sessions, Attendance %, and total `eng_lang_warnings`.
+- **5th Chart — Speed x Accuracy 4-Quadrant Diagnostic Scatter Plot:** Added full-width interactive Chart.js scatter plot with custom inline quadrant plugin (dashed `X = Class Median Net WPM`, `Y = 85%`, 4 coaching quadrant labels & tints, student number annotations), `ข้อมูลล่าสุด / Posttest` vs `Pretest` toggle, white-background PNG download, 4-card quadrant count strip, and click-to-open student summary.
+- **Upgraded Summary Table & Teacher Student Summary Modal (`ใบสรุปผลรายบุคคลสำหรับครู`):** Added `ปุ่มพลาดมากสุด`, `กลุ่มพฤติกรรม`, and `"ดูสรุป"` (`eye` SVG) opening a detailed modal with 4 stat tiles, auto-generated Thai coaching note, Top 5 weak keys progress bars, full session history table, and `"คัดลอกสรุปรายบุคคล"`.
+- **Upgraded Research Exports & Native MS Word Chapter 4 Table (`dashboard.html`, `js/dashboard.js`):** Added `speed_loss_wpm` to Raw Logs CSV; expanded Pre-Post Paired CSV to 17 SPSS/Jamovi columns (`pre/post gross_wpm, net_wpm, net_cpm, acc_pct, diff_net_wpm, diff_acc_pct, practice_count, total_eng_warnings`); upgraded `"คัดลอกตารางสถิติ (บทที่ 4)"` to write rich `text/html` + `text/plain` via `ClipboardItem` (with `contenteditable` + `execCommand('copy')` fallback) producing a native 3-line APA MS Word table in `TH SarabunPSK` 16pt (auto-omitting empty `N === 0` comparison rows and blanking repeated variable labels when both periods exist); added 1-click `"ดาวน์โหลดตาราง Word (.doc)"` (`chapter4_stats_table.doc`, A4 2.54cm margins).
+
+## 3. Previous Updates (Revision 6 — Reusable `js/research-info.js`)
+
+- **`js/icons.js`:** Added crisp Lucide-style inline SVGs `bookOpen`, `info`, `calculator`, and `clipboardCheck` (alongside existing `shieldCheck`, `x`, `copy`, `check`) with zero emojis.
+- **`js/research-info.js`:** Created standalone reusable module exporting `initResearchInfoModal()` and `openResearchInfoModal(defaultTab = 'variables')` (ready to mount on `dashboard.html` in one call):
+  - **Tab 1 (ตัวแปรทั้งหมด):** 3-tier operational definitions covering Primary Dependent Variables (`Net WPM`, `Accuracy %`), Supplementary Speed Metrics (`Gross WPM`, `Gross CPM`, `Net CPM`), and all 11 raw/context database columns (`typing_logs` & `students`).
+  - **Tab 2 (สูตรคำนวณทั้งหมด):** Clean HTML fraction formula cards (offline-safe, zero MathJax CDN) for `Duration (min)`, `Gross CPM`, `Net CPM`, `Gross WPM`, `Net WPM`, `Accuracy %`, `Net WPM = Gross WPM * (Accuracy % / 100)`, plus the highlighted academic rationale explaining Strict-Stop Mode and avoiding Floor Effect.
+  - **Tab 3 (ตัวอย่าง & ทดลองคำนวณ):** Side-by-side worked examples (Cases A & B in 180s) plus live interactive Formula Simulator (`sec=180`, `correct=123`, `errors=30`) computing all 7 outputs and step-by-step arithmetic in real time.
+  - **Tab 4 (กลไกควบคุมความเที่ยงตรง):** 6 numbered academic research-integrity controls (Strict-Stop & Canonical Thai Unicode, Language Guard, Research Integrity Lock, First-Keystroke Timer, Session PIN & One-Attempt Lock, Inclusive Classroom & IEP Filter).
+  - **Copy for Chapter 3:** Footer button `"คัดลอกเนื้อหาสรุปสำหรับบทที่ 3"` copies formal plain-text summary for MS Word / Google Docs with brief `"คัดลอกเรียบร้อย"` feedback.
+- **`admin.html` & `js/admin.js`:** Added `"ข้อมูลละเอียด"` button (`bookOpen` SVG) in the logged-in header nav bar wired to `openResearchInfoModal('variables')`.
+
+## 3. Previous Fixes (Revision 5 — Strict-Stop Net WPM / Net CPM Formula)
+
+- **Scoring Formula Fix (`js/game.js`, `.agent/skills/thai-typing-dev/SKILL.md`):**
+  - Eliminated the 5-character-per-error double penalty (`grossWpm - errorKeystrokes / durationMin`) that collapsed Net WPM to `0.0` at Accuracy <= 80% in Strict-Stop mode (where all errors are already corrected before advancing).
+  - Updated both live HUD (`updateLiveMetricsUI`) and final submission payload (`buildSubmissionPayload`) to: `grossCpm = totalKeystrokes / durationMin`, `netCpm = correctChars / durationMin`, `grossWpm = (totalKeystrokes / 5) / durationMin`, `netWpm = (correctChars / 5) / durationMin`, `accuracyPct = totalKeystrokes > 0 ? (correctChars / totalKeystrokes) * 100 : 0` (rounded to 2 decimal places for `submit_typing_log`).
+  - Synced `.agent/skills/thai-typing-dev/SKILL.md` Section 5 to prevent future regression.
+
+## 3. Previous Upgrades (Revision 4 — Shifted Key Hardening, Dynamic Roster RPCs & Zero Hardcoded Counts)
 
 1. **Upgrade 1 — Bulletproof Thai Shifted Key Handling, CapsLock Guard & Live Key Debugger (`js/keyboard.js`, `js/game.js`, `index.html`, `js/icons.js`):**
    - Exported `KEDMANEE_CODE_MAP` and `resolveKedmaneeChar(eventCode, shiftKey)` from `js/keyboard.js`.
